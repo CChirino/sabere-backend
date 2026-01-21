@@ -36,7 +36,15 @@ class PermissionSeeder extends Seeder
             'delete students',
         ];
 
-        // Permisos para cursos
+        // Permisos para profesores
+        $teacherPermissions = [
+            'view teachers',
+            'create teachers',
+            'edit teachers',
+            'delete teachers',
+        ];
+
+        // Permisos para cursos/materias
         $coursePermissions = [
             'view courses',
             'create courses',
@@ -52,13 +60,65 @@ class PermissionSeeder extends Seeder
             'delete grades',
         ];
 
+        // Permisos para secciones
+        $sectionPermissions = [
+            'view sections',
+            'create sections',
+            'edit sections',
+            'delete sections',
+        ];
+
+        // Permisos para inscripciones
+        $enrollmentPermissions = [
+            'view enrollments',
+            'create enrollments',
+            'edit enrollments',
+            'delete enrollments',
+        ];
+
+        // Permisos para tareas
+        $taskPermissions = [
+            'view tasks',
+            'create tasks',
+            'edit tasks',
+            'delete tasks',
+            'submit tasks',
+        ];
+
+        // Permisos para entregas/submissions
+        $submissionPermissions = [
+            'view submissions',
+            'grade submissions',
+        ];
+
+        // Permisos para reportes
+        $reportPermissions = [
+            'view reports',
+            'export reports',
+        ];
+
+        // Permisos para períodos académicos
+        $academicPeriodPermissions = [
+            'view academic_periods',
+            'create academic_periods',
+            'edit academic_periods',
+            'delete academic_periods',
+        ];
+
         // Combinar todos los permisos
         $allPermissions = array_merge(
             $userPermissions,
             $rolePermissions,
             $studentPermissions,
+            $teacherPermissions,
             $coursePermissions,
-            $gradePermissions
+            $gradePermissions,
+            $sectionPermissions,
+            $enrollmentPermissions,
+            $taskPermissions,
+            $submissionPermissions,
+            $reportPermissions,
+            $academicPeriodPermissions
         );
 
         // Crear permisos

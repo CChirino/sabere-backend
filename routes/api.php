@@ -5,6 +5,11 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\SocialAuthController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
+use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\Academic\TaskController;
+use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
+use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
+use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,14 +36,18 @@ Route::prefix('v1')->group(function () {
 });
 
 
+
 Route::middleware(['auth:sanctum'])->group(function () {
     // Ruta para obtener el usuario autenticado
     Route::get('/user', function (Request $request) {
         return $request->user()->load('roles');
     });
 
-    // Rutas de administración (solo para super_admin y admin)
-    Route::prefix('v1/admin')->middleware(['role:super_admin|admin'])->group(function () {
+    // Dashboard - accesible para todos los usuarios autenticados
+    Route::get('v1/dashboard', [DashboardController::class, 'index']);
+
+    // Rutas de administración (solo para admin y director)
+    Route::prefix('v1/admin')->middleware(['role:admin|director'])->group(function () {
         // Rutas para gestión de roles
         Route::apiResource('roles', RoleController::class);
         
@@ -52,18 +61,43 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->name('users.remove-roles');
     });
 
-    // Rutas para docentes
+    // Rutas académicas - acceso según rol (incluye estudiantes para consultas)
+    Route::middleware(['role:admin|director|coordinator|teacher|student'])->group(function () {
+        // Incluir rutas académicas (gestión completa)
+        require __DIR__.'/academic.php';
+    });
+
+    // Rutas para profesores
     Route::prefix('v1/teacher')->middleware('role:teacher')->group(function () {
-        // Aquí irán las rutas específicas para docentes
+        Route::get('my-assignments', [DashboardController::class, 'teacherDashboard']);
+        Route::get('pending-submissions', [TaskSubmissionController::class, 'pendingForTeacher']);
     });
 
     // Rutas para estudiantes
     Route::prefix('v1/student')->middleware('role:student')->group(function () {
-        // Aquí irán las rutas específicas para estudiantes
+        Route::get('my-tasks', function (Request $request) {
+            return app(TaskController::class)->forStudent($request->user()->id);
+        });
+        Route::get('my-scores', function (Request $request) {
+            return app(StudentScoreController::class)->byStudent($request->user()->id);
+        });
+        Route::post('submit-task', [TaskSubmissionController::class, 'store']);
     });
 
-    // Rutas para padres
-    Route::prefix('v1/parent')->middleware('role:parent')->group(function () {
-        // Aquí irán las rutas específicas para padres
+    // Rutas para representantes
+    Route::prefix('v1/guardian')->middleware('role:guardian')->group(function () {
+        Route::get('my-students', function (Request $request) {
+            return app(StudentGuardianController::class)->studentsByGuardian($request->user()->id);
+        });
+        Route::get('student/{studentId}/info', [StudentGuardianController::class, 'studentInfo']);
+        Route::get('student/{studentId}/scores', function ($studentId) {
+            return app(TaskSubmissionController::class)->index(request()->merge(['student_id' => $studentId, 'status' => 'graded']));
+        });
+        Route::get('student/{studentId}/tasks', function ($studentId) {
+            return app(TaskController::class)->forStudent($studentId);
+        });
+        Route::get('terms', function () {
+            return app(\App\Http\Controllers\Api\V1\Academic\TermController::class)->index(request());
+        });
     });
 });
