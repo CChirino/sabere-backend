@@ -510,8 +510,8 @@ const isCurrentRoute = (routeName: string): boolean => {
             </header>
 
             <!-- Page content -->
-            <main class="py-6">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <main class="py-4 sm:py-6">
+                <div class="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
                     <!-- Flash messages -->
                     <div v-if="$page.props.flash?.success" class="mb-4 rounded-md bg-green-50 p-4">
                         <div class="flex">

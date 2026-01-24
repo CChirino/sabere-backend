@@ -44,23 +44,23 @@ const getTaskTypeLabel = (type: string) => {
 
     <AppLayout>
         <template #header>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Dashboard</h1>
         </template>
 
         <!-- Período actual -->
-        <div v-if="dashboardData.current_period" class="mb-6">
-            <div class="rounded-lg bg-blue-50 p-4">
-                <div class="flex items-center">
+        <div v-if="dashboardData.current_period" class="mb-4 sm:mb-6">
+            <div class="rounded-lg bg-blue-50 p-3 sm:p-4">
+                <div class="flex items-start sm:items-center">
                     <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p class="text-sm font-medium text-blue-800">
-                            Período Académico: <strong>{{ dashboardData.current_period.name }}</strong>
-                            <span v-if="dashboardData.current_term" class="ml-2">
-                                | Lapso: <strong>{{ dashboardData.current_term.name }}</strong>
+                        <p class="text-xs sm:text-sm font-medium text-blue-800">
+                            <span class="block sm:inline">Período: <strong>{{ dashboardData.current_period.name }}</strong></span>
+                            <span v-if="dashboardData.current_term" class="block sm:inline sm:ml-2">
+                                <span class="hidden sm:inline">|</span> Lapso: <strong>{{ dashboardData.current_term.name }}</strong>
                             </span>
                         </p>
                     </div>
@@ -70,7 +70,7 @@ const getTaskTypeLabel = (type: string) => {
 
         <!-- Admin Dashboard -->
         <template v-if="isAdmin">
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+            <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 mb-6 sm:mb-8">
                 <StatCard title="Total Usuarios" :value="dashboardData.stats.total_users || 0" color="blue">
                     <template #icon>
                         <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,7 +119,7 @@ const getTaskTypeLabel = (type: string) => {
 
         <!-- Director Dashboard -->
         <template v-else-if="isDirector">
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 mb-6 sm:mb-8">
                 <StatCard title="Estudiantes" :value="dashboardData.stats.total_students || 0" color="green" />
                 <StatCard title="Profesores" :value="dashboardData.stats.total_teachers || 0" color="purple" />
                 <StatCard title="Secciones" :value="dashboardData.stats.total_sections || 0" color="blue" />
@@ -129,7 +129,7 @@ const getTaskTypeLabel = (type: string) => {
 
         <!-- Coordinator Dashboard -->
         <template v-else-if="isCoordinator">
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
                 <StatCard title="Profesores" :value="dashboardData.stats.total_teachers || 0" color="purple" />
                 <StatCard title="Estudiantes" :value="dashboardData.stats.total_students || 0" color="green" />
                 <StatCard title="Secciones" :value="dashboardData.stats.total_sections || 0" color="blue" />
@@ -158,7 +158,7 @@ const getTaskTypeLabel = (type: string) => {
 
         <!-- Teacher Dashboard -->
         <template v-else-if="isTeacher">
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
                 <StatCard title="Mis Materias" :value="dashboardData.stats.total_assignments || 0" color="blue" />
                 <StatCard title="Mis Estudiantes" :value="dashboardData.stats.total_students || 0" color="green" />
                 <StatCard title="Entregas Pendientes" :value="dashboardData.stats.pending_submissions || 0" color="yellow" />
@@ -223,7 +223,7 @@ const getTaskTypeLabel = (type: string) => {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
                     <StatCard title="Tareas Pendientes" :value="dashboardData.stats.pending_tasks || 0" color="yellow" />
                     <StatCard title="Promedio Actual" :value="dashboardData.stats.current_average || '-'" color="blue" />
                     <StatCard title="Materias" :value="dashboardData.stats.total_subjects || 0" color="purple" />

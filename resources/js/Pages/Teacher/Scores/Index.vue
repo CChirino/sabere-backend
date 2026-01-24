@@ -40,11 +40,11 @@ onMounted(() => {
 
     <AppLayout>
         <template #header>
-            <h1 class="text-2xl font-bold text-gray-900">Boleta de Calificaciones</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Boleta de Calificaciones</h1>
         </template>
 
-        <Card class="mb-6">
-            <p class="text-gray-600">
+        <Card class="mb-4 sm:mb-6">
+            <p class="text-sm sm:text-base text-gray-600">
                 Las calificaciones se calculan automáticamente basándose en las evaluaciones y tareas calificadas.
                 Selecciona una materia para ver el resumen de notas.
             </p>
@@ -68,7 +68,7 @@ onMounted(() => {
             <p class="mt-1 text-gray-500">No tienes materias asignadas.</p>
         </Card>
 
-        <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div v-else class="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <div 
                 v-for="assignment in assignments" 
                 :key="assignment.id" 

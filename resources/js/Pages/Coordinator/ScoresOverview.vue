@@ -128,12 +128,12 @@ onMounted(async () => {
 
     <AppLayout>
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h1 class="text-2xl font-bold text-gray-900">Seguimiento de Notas</h1>
+            <div class="flex flex-col gap-3">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Seguimiento de Notas</h1>
                 <select
                     v-model="selectedTerm"
                     @change="handleTermChange"
-                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                     <option v-for="term in terms" :key="term.id" :value="String(term.id)">
                         {{ term.name }}
@@ -143,31 +143,31 @@ onMounted(async () => {
         </template>
 
         <!-- Estadísticas -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-blue-600">{{ stats.total_sections }}</div>
-                    <div class="text-sm text-gray-500">Total Secciones</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-blue-600">{{ stats.total_sections }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Total Secciones</div>
                 </div>
             </Card>
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-green-600">{{ stats.sections_with_scores }}</div>
-                    <div class="text-sm text-gray-500">Con Notas</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-green-600">{{ stats.sections_with_scores }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Con Notas</div>
                 </div>
             </Card>
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold" :class="getScoreColor(stats.average_score)">
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold" :class="getScoreColor(stats.average_score)">
                         {{ stats.average_score.toFixed(1) }}
                     </div>
-                    <div class="text-sm text-gray-500">Promedio General</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Promedio General</div>
                 </div>
             </Card>
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-red-600">{{ stats.students_below_passing }}</div>
-                    <div class="text-sm text-gray-500">Estudiantes &lt; 10</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-red-600">{{ stats.students_below_passing }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Estudiantes &lt; 10</div>
                 </div>
             </Card>
         </div>

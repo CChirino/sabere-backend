@@ -81,19 +81,19 @@ onMounted(() => {
 
     <AppLayout>
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h1 class="text-2xl font-bold text-gray-900">Gestión de Profesores</h1>
-                <div class="flex items-center gap-2">
+            <div class="flex flex-col gap-3">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Gestión de Profesores</h1>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
                         v-model="searchQuery"
                         type="text"
                         placeholder="Buscar profesor..."
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         @keyup.enter="handleSearch"
                     />
                     <button
                         @click="handleSearch"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 whitespace-nowrap"
                     >
                         Buscar
                     </button>

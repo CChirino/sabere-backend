@@ -117,12 +117,12 @@ onMounted(() => {
 
     <AppLayout>
         <template #header>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <h1 class="text-2xl font-bold text-gray-900">Seguimiento de Tareas</h1>
+            <div class="flex flex-col gap-3">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Seguimiento de Tareas</h1>
                 <select
                     v-model="filter"
                     @change="handleFilterChange"
-                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="all">Todas las tareas</option>
                     <option value="pending">Con entregas pendientes</option>
@@ -133,29 +133,29 @@ onMounted(() => {
         </template>
 
         <!-- Estadísticas -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-blue-600">{{ stats.total_tasks }}</div>
-                    <div class="text-sm text-gray-500">Total Tareas</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-blue-600">{{ stats.total_tasks }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Total Tareas</div>
                 </div>
             </Card>
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-green-600">{{ stats.published_tasks }}</div>
-                    <div class="text-sm text-gray-500">Publicadas</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-green-600">{{ stats.published_tasks }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Publicadas</div>
                 </div>
             </Card>
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-yellow-600">{{ stats.pending_submissions }}</div>
-                    <div class="text-sm text-gray-500">Entregas Pendientes</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-yellow-600">{{ stats.pending_submissions }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Pendientes</div>
                 </div>
             </Card>
             <Card>
-                <div class="p-4 text-center">
-                    <div class="text-3xl font-bold text-red-600">{{ stats.overdue_tasks }}</div>
-                    <div class="text-sm text-gray-500">Vencidas</div>
+                <div class="p-3 sm:p-4 text-center">
+                    <div class="text-2xl sm:text-3xl font-bold text-red-600">{{ stats.overdue_tasks }}</div>
+                    <div class="text-xs sm:text-sm text-gray-500">Vencidas</div>
                 </div>
             </Card>
         </div>

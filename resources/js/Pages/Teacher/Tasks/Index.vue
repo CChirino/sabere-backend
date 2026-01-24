@@ -81,10 +81,10 @@ onMounted(() => {
 
     <AppLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-gray-900">Mis Tareas</h1>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Mis Tareas</h1>
                 <Link :href="route('teacher.tasks.create')">
-                    <PrimaryButton>Nueva Tarea</PrimaryButton>
+                    <PrimaryButton class="w-full sm:w-auto justify-center">Nueva Tarea</PrimaryButton>
                 </Link>
             </div>
         </template>
