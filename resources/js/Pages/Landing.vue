@@ -166,14 +166,6 @@ onMounted(() => {
                         <a href="#recursos" class="text-slate-300 hover:text-white font-medium transition-colors">Recursos</a>
                     </nav>
 
-                    <div class="hidden lg:flex items-center space-x-4">
-                        <Link v-if="canRegister" :href="route('register')" class="text-slate-900 bg-teal-400 hover:bg-teal-300 px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2">
-                            Agendar Demo
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                            </svg>
-                        </Link>
-                    </div>
 
                     <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 rounded-lg text-slate-300 hover:bg-slate-800">
                         <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,7 +210,7 @@ onMounted(() => {
                         </p>
                         
                         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link v-if="canRegister" :href="route('register')" class="inline-flex items-center justify-center gap-2 bg-teal-400 text-slate-900 px-8 py-4 rounded-xl text-lg font-semibold transition-all hover:bg-teal-300">
+                            <Link :href="route('demo')" class="inline-flex items-center justify-center gap-2 bg-teal-400 text-slate-900 px-8 py-4 rounded-xl text-lg font-semibold transition-all hover:bg-teal-300">
                                 Probar Gratis
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>

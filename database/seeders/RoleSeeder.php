@@ -56,16 +56,18 @@ class RoleSeeder extends Seeder
             array_filter($directorPermissions, fn($p) => Permission::where('name', $p)->exists())
         );
 
-        // Permisos del Coordinador (supervisión)
+        // Permisos del Coordinador (supervisión y gestión de profesores)
         $coordinatorPermissions = [
             'view users',
             'view students', 'edit students',
-            'view teachers',
+            'view teachers', 'edit teachers',
             'view courses',
             'view grades', 'edit grades',
             'view sections',
             'view enrollments', 'edit enrollments',
-            'view reports',
+            'view reports', 'export reports',
+            'view tasks', 'edit tasks',
+            'view submissions', 'grade submissions',
         ];
         $coordinator->syncPermissions(
             array_filter($coordinatorPermissions, fn($p) => Permission::where('name', $p)->exists())

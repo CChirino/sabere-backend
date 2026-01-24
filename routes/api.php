@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Academic\TaskController;
 use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
 use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
+use App\Http\Controllers\Web\Teacher\AttendanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -99,5 +100,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('terms', function () {
             return app(\App\Http\Controllers\Api\V1\Academic\TermController::class)->index(request());
         });
+    });
+
+    // Rutas de asistencia (para profesores y administradores)
+    Route::prefix('v1/attendance')->middleware('role:admin|director|coordinator|teacher')->group(function () {
+        Route::get('section/{section}', [AttendanceController::class, 'getSectionAttendance']);
+        Route::get('section/{section}/report', [AttendanceController::class, 'getSectionReport']);
+        Route::get('section/{section}/history', [AttendanceController::class, 'getHistory']);
+        Route::get('student/{studentId}/stats', [AttendanceController::class, 'getStudentStats']);
+    });
+
+    // Rutas para coordinadores
+    Route::prefix('v1/coordinator')->middleware('role:admin|director|coordinator')->group(function () {
+        Route::get('teachers', [\App\Http\Controllers\Api\V1\CoordinatorController::class, 'teachers']);
+        Route::get('teachers/{id}', [\App\Http\Controllers\Api\V1\CoordinatorController::class, 'teacherShow']);
+        Route::get('tasks-overview', [\App\Http\Controllers\Api\V1\CoordinatorController::class, 'tasksOverview']);
+        Route::get('scores-overview', [\App\Http\Controllers\Api\V1\CoordinatorController::class, 'scoresOverview']);
     });
 });

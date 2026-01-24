@@ -12,6 +12,7 @@ use App\Http\Controllers\Web\Academic\AssignmentController;
 use App\Http\Controllers\Web\Academic\ScheduleController;
 use App\Http\Controllers\Web\Teacher\ScoreController;
 use App\Http\Controllers\Web\Teacher\TaskController;
+use App\Http\Controllers\Web\Teacher\AttendanceController;
 use App\Http\Controllers\Web\Student\SectionChatController;
 use App\Http\Controllers\Web\Teacher\SectionChatController as TeacherSectionChatController;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,10 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
     ]);
 });
+
+Route::get('/demo', function () {
+    return Inertia::render('Demo');
+})->name('demo');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
@@ -92,6 +97,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/schedules/{schedule}', [ScheduleController::class, 'destroy'])->name('schedules.destroy');
     });
 
+    // Coordinator routes
+    Route::prefix('coordinator')->name('coordinator.')->middleware('role:admin|director|coordinator')->group(function () {
+        // Gestión de profesores
+        Route::get('/teachers', fn() => Inertia::render('Coordinator/Teachers/Index'))->name('teachers.index');
+        Route::get('/teachers/{id}', fn($id) => Inertia::render('Coordinator/Teachers/Show', ['teacherId' => (int)$id]))->name('teachers.show');
+        
+        // Seguimiento de tareas
+        Route::get('/tasks-overview', fn() => Inertia::render('Coordinator/TasksOverview'))->name('tasks-overview');
+        
+        // Seguimiento de notas
+        Route::get('/scores-overview', fn() => Inertia::render('Coordinator/ScoresOverview'))->name('scores-overview');
+        
+        // Reportes
+        Route::get('/reports', fn() => Inertia::render('Coordinator/Reports'))->name('reports');
+    });
+
     // Teacher routes (also accessible by admin, director, coordinator)
     Route::prefix('teacher')->name('teacher.')->middleware('role:admin|director|coordinator|teacher')->group(function () {
         Route::get('/assignments', fn() => Inertia::render('Teacher/Assignments'))->name('assignments');
@@ -117,6 +138,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/chat/{section}', [TeacherSectionChatController::class, 'show'])->name('chat.show');
         Route::post('/chat/{section}', [TeacherSectionChatController::class, 'store'])->name('chat.store');
         Route::delete('/chat/{message}', [TeacherSectionChatController::class, 'destroy'])->name('chat.destroy');
+        
+        // Attendance routes
+        Route::get('/attendance', fn() => Inertia::render('Teacher/Attendance/Index'))->name('attendance.index');
+        Route::get('/attendance/section/{id}', fn($id) => Inertia::render('Teacher/Attendance/Section', ['sectionId' => (int)$id]))->name('attendance.section');
+        Route::get('/attendance/section/{id}/report', fn($id) => Inertia::render('Teacher/Attendance/Report', ['sectionId' => (int)$id]))->name('attendance.report');
+        Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
     });
 
     // Student routes

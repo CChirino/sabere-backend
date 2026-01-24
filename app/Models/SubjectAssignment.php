@@ -64,6 +64,9 @@ class SubjectAssignment extends Model
      */
     public function students()
     {
+        if (!$this->section) {
+            return collect();
+        }
         return $this->section->students();
     }
 }

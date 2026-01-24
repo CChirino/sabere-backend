@@ -7,9 +7,26 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import InstallPrompt from '@/Components/PWA/InstallPrompt.vue';
 
 const showingNavigationDropdown = ref(false);
-const showingSidebar = ref(true);
+const sidebarOpen = ref(false); // Cerrado por defecto en móvil
+const sidebarCollapsed = ref(false);
+
+// Persistir estado del sidebar en localStorage
+const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+if (savedCollapsed !== null) {
+    sidebarCollapsed.value = savedCollapsed === 'true';
+}
+
+const toggleSidebar = () => {
+    sidebarCollapsed.value = !sidebarCollapsed.value;
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed.value));
+};
+
+const toggleMobileSidebar = () => {
+    sidebarOpen.value = !sidebarOpen.value;
+};
 
 const { user, hasRole, roleLabel, isAdmin, isDirector, isCoordinator, isTeacher, isStudent, isGuardian, isStaff } = useAuth();
 
@@ -44,55 +61,84 @@ const navigation = computed<NavItem[]>(() => [
         icon: 'shield',
         show: isAdmin.value,
     },
-    // Académico
+    // Académico (solo admin y director)
     {
         name: 'Períodos Académicos',
         href: route('academic.periods.index'),
         routeName: 'academic.periods.*',
         icon: 'calendar',
-        show: isStaff.value,
+        show: hasRole(['admin', 'director']),
     },
     {
         name: 'Niveles y Grados',
         href: route('academic.grades.index'),
         routeName: 'academic.grades.*',
         icon: 'academic-cap',
-        show: isStaff.value,
+        show: hasRole(['admin', 'director']),
     },
     {
         name: 'Secciones',
         href: route('academic.sections.index'),
         routeName: 'academic.sections.*',
         icon: 'collection',
-        show: isStaff.value,
+        show: hasRole(['admin', 'director']),
     },
     {
         name: 'Materias',
         href: route('academic.subjects.index'),
         routeName: 'academic.subjects.*',
         icon: 'book-open',
-        show: isStaff.value,
+        show: hasRole(['admin', 'director']),
     },
     {
         name: 'Inscripciones',
         href: route('academic.enrollments.index'),
         routeName: 'academic.enrollments.*',
         icon: 'user-add',
-        show: isStaff.value,
+        show: hasRole(['admin', 'director']),
     },
     {
         name: 'Asignaciones',
         href: route('academic.assignments.index'),
         routeName: 'academic.assignments.*',
         icon: 'clipboard-list',
-        show: isStaff.value,
+        show: hasRole(['admin', 'director']),
     },
     {
         name: 'Horarios',
         href: route('academic.schedules.index'),
         routeName: 'academic.schedules.*',
         icon: 'clock',
-        show: hasRole(['admin', 'director', 'coordinator', 'teacher']),
+        show: hasRole(['admin', 'director', 'teacher']),
+    },
+    // Coordinador
+    {
+        name: 'Profesores',
+        href: route('coordinator.teachers.index'),
+        routeName: 'coordinator.teachers.*',
+        icon: 'user-group',
+        show: hasRole(['admin', 'director', 'coordinator']),
+    },
+    {
+        name: 'Seguimiento Tareas',
+        href: route('coordinator.tasks-overview'),
+        routeName: 'coordinator.tasks-overview',
+        icon: 'clipboard-list',
+        show: hasRole(['admin', 'director', 'coordinator']),
+    },
+    {
+        name: 'Seguimiento Notas',
+        href: route('coordinator.scores-overview'),
+        routeName: 'coordinator.scores-overview',
+        icon: 'chart-bar',
+        show: hasRole(['admin', 'director', 'coordinator']),
+    },
+    {
+        name: 'Reportes',
+        href: route('coordinator.reports'),
+        routeName: 'coordinator.reports',
+        icon: 'document-report',
+        show: hasRole(['admin', 'director', 'coordinator']),
     },
     // Profesor
     {
@@ -107,21 +153,28 @@ const navigation = computed<NavItem[]>(() => [
         href: route('teacher.tasks.index'),
         routeName: 'teacher.tasks.*',
         icon: 'document-text',
-        show: hasRole(['admin', 'director', 'coordinator', 'teacher']),
+        show: hasRole(['teacher']),
     },
     {
         name: 'Boleta',
         href: route('teacher.scores.index'),
         routeName: 'teacher.scores.*',
         icon: 'chart-bar',
-        show: hasRole(['admin', 'director', 'coordinator', 'teacher']),
+        show: hasRole(['teacher']),
     },
     {
         name: 'Chat Secciones',
         href: route('teacher.chat.index'),
         routeName: 'teacher.chat.*',
         icon: 'chat',
-        show: hasRole(['admin', 'director', 'coordinator', 'teacher']),
+        show: hasRole(['teacher']),
+    },
+    {
+        name: 'Asistencia',
+        href: route('teacher.attendance.index'),
+        routeName: 'teacher.attendance.*',
+        icon: 'clipboard-check',
+        show: hasRole(['teacher']),
     },
     // Estudiante
     {
@@ -177,35 +230,50 @@ const isCurrentRoute = (routeName: string): boolean => {
         <!-- Sidebar -->
         <aside
             :class="[
-                showingSidebar ? 'translate-x-0' : '-translate-x-full',
-                'fixed inset-y-0 left-0 z-50 w-64 bg-sabere-dark transition-transform duration-300 ease-in-out lg:translate-x-0'
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+                sidebarCollapsed ? 'lg:w-20' : 'lg:w-64',
+                'fixed inset-y-0 left-0 z-50 w-64 bg-sabere-dark transition-all duration-300 ease-in-out lg:translate-x-0'
             ]"
         >
             <!-- Logo -->
-            <div class="flex h-16 items-center justify-center border-b border-sabere-dark/50 px-4">
+            <div class="flex h-16 items-center border-b border-sabere-dark/50 px-4" :class="sidebarCollapsed ? 'justify-center' : 'justify-between'">
                 <Link :href="route('dashboard')" class="flex items-center">
-                    <span class="text-2xl font-bold text-white">Saberé</span>
+                    <span v-if="!sidebarCollapsed" class="text-2xl font-bold text-white">Saberé</span>
+                    <span v-else class="text-2xl font-bold text-white">S</span>
                 </Link>
+                <!-- Toggle button (desktop) -->
+                <button
+                    @click="toggleSidebar"
+                    class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
+                    :class="sidebarCollapsed ? 'absolute -right-3 top-5 bg-sabere-dark border border-gray-700 shadow-lg' : ''"
+                >
+                    <svg class="w-5 h-5 transition-transform" :class="sidebarCollapsed ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                    </svg>
+                </button>
             </div>
 
             <!-- Navigation -->
-            <nav class="mt-6 px-3">
+            <nav class="mt-6 px-3 overflow-y-auto" style="max-height: calc(100vh - 4rem);">
                 <div class="space-y-1">
                     <Link
                         v-for="item in visibleNavigation"
                         :key="item.name"
                         :href="item.href"
+                        :title="sidebarCollapsed ? item.name : ''"
                         :class="[
                             isCurrentRoute(item.routeName)
                                 ? 'bg-sabere-accent/20 text-sabere-accent'
                                 : 'text-gray-300 hover:bg-white/10 hover:text-white',
-                            'group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors'
+                            sidebarCollapsed ? 'justify-center px-2' : 'px-3',
+                            'group flex items-center rounded-md py-2 text-sm font-medium transition-colors'
                         ]"
                     >
                         <!-- Icons -->
                         <svg
                             v-if="item.icon === 'home'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -214,7 +282,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'users'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -223,7 +292,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'shield'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -232,7 +302,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'calendar'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -241,7 +312,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'academic-cap'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -252,7 +324,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'collection'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -261,7 +334,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'book-open'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -270,7 +344,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'clock'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -279,7 +354,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'document-text'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -288,7 +364,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'chart-bar'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -297,7 +374,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'user-add'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -306,7 +384,8 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'clipboard-list'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -315,28 +394,59 @@ const isCurrentRoute = (routeName: string): boolean => {
                         </svg>
                         <svg
                             v-else-if="item.icon === 'chat'"
-                            class="mr-3 h-5 w-5 flex-shrink-0"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                         >
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        {{ item.name }}
+                        <svg
+                            v-else-if="item.icon === 'clipboard-check'"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        <svg
+                            v-else-if="item.icon === 'user-group'"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <svg
+                            v-else-if="item.icon === 'document-report'"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span v-if="!sidebarCollapsed" class="truncate">{{ item.name }}</span>
                     </Link>
                 </div>
             </nav>
         </aside>
 
         <!-- Main content -->
-        <div class="lg:pl-64">
+        <div :class="sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'" class="transition-all duration-300">
             <!-- Top bar -->
             <header class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
                 <!-- Mobile menu button -->
                 <button
                     type="button"
                     class="-m-2.5 p-2.5 text-gray-700 lg:hidden"
-                    @click="showingSidebar = !showingSidebar"
+                    @click="toggleMobileSidebar"
                 >
                     <span class="sr-only">Abrir menú</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -436,9 +546,12 @@ const isCurrentRoute = (routeName: string): boolean => {
 
         <!-- Mobile sidebar overlay -->
         <div
-            v-if="showingSidebar"
+            v-if="sidebarOpen"
             class="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
-            @click="showingSidebar = false"
+            @click="sidebarOpen = false"
         ></div>
+
+        <!-- PWA Install Prompt -->
+        <InstallPrompt />
     </div>
 </template>
