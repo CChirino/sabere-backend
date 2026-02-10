@@ -27,7 +27,7 @@ class ContactFormMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.contact-form',
+            view: 'emails.contact-form',
         );
     }
 }
