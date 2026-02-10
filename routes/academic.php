@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
 use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use App\Http\Controllers\Api\V1\Academic\ScheduleController;
+use App\Http\Controllers\Api\V1\Academic\EventController;
 use Illuminate\Support\Facades\Route;
 
 // Agrupar rutas bajo el prefijo v1
@@ -111,4 +112,9 @@ Route::prefix('v1')->group(function () {
     Route::get('schedules/by-teacher/{teacherId}', [ScheduleController::class, 'byTeacher']);
     Route::get('schedules/by-student/{studentId}', [ScheduleController::class, 'byStudent']);
     Route::get('schedules/today/section/{sectionId}', [ScheduleController::class, 'todayBySection']);
+
+    // Rutas para Eventos
+    Route::apiResource('events', EventController::class)
+        ->except(['create', 'edit']);
+    Route::get('events-upcoming', [EventController::class, 'upcoming']);
 });

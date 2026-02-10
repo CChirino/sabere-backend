@@ -128,12 +128,12 @@ onMounted(async () => {
 
     <AppLayout>
         <template #header>
-            <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-4">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Seguimiento de Notas</h1>
                 <select
                     v-model="selectedTerm"
                     @change="handleTermChange"
-                    class="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="flex-shrink-0 w-40 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                     <option v-for="term in terms" :key="term.id" :value="String(term.id)">
                         {{ term.name }}
@@ -181,6 +181,31 @@ onMounted(async () => {
                 empty-message="No hay datos de notas disponibles"
                 @page-change="handlePageChange"
             >
+                <template #mobile-card="{ item }">
+                    <div class="mb-2">
+                        <div class="font-medium text-gray-900">{{ item.section_name }}</div>
+                        <div class="text-sm text-gray-500">{{ item.grade_name }} · {{ item.subject_name }}</div>
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2 flex-1">
+                            <div class="flex-1 bg-gray-200 rounded-full h-2 max-w-[120px]">
+                                <div
+                                    class="h-2 rounded-full"
+                                    :class="{
+                                        'bg-green-500': getProgressColor(item.scores_entered, item.students_count) === 'green',
+                                        'bg-yellow-500': getProgressColor(item.scores_entered, item.students_count) === 'yellow',
+                                        'bg-red-500': getProgressColor(item.scores_entered, item.students_count) === 'red',
+                                    }"
+                                    :style="{ width: `${item.students_count > 0 ? (item.scores_entered / item.students_count) * 100 : 0}%` }"
+                                ></div>
+                            </div>
+                            <span class="text-xs text-gray-500">{{ item.scores_entered }}/{{ item.students_count }}</span>
+                        </div>
+                        <span class="text-lg font-bold ml-3" :class="getScoreColor(item.average_score)">
+                            {{ item.average_score ? item.average_score.toFixed(1) : '-' }}
+                        </span>
+                    </div>
+                </template>
                 <template #cell-section_name="{ item }">
                     <div>
                         <div class="font-medium text-gray-900">{{ item.section_name }}</div>

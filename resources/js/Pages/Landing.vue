@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
 
 defineProps<{
     canLogin?: boolean;
@@ -8,8 +8,12 @@ defineProps<{
 }>();
 
 const mobileMenuOpen = ref(false);
+const contactSuccess = ref(false);
 
-const contactForm = ref({
+const page = usePage();
+const flashSuccess = computed(() => (page.props as any).flash?.success);
+
+const contactForm = useForm({
     name: '',
     institution: '',
     email: '',
@@ -18,7 +22,16 @@ const contactForm = ref({
 });
 
 const submitContact = () => {
-    console.log('Form submitted:', contactForm.value);
+    contactForm.post(route('contact.send'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            contactSuccess.value = true;
+            contactForm.reset();
+            setTimeout(() => {
+                contactSuccess.value = false;
+            }, 5000);
+        },
+    });
 };
 
 onMounted(() => {
@@ -463,26 +476,25 @@ onMounted(() => {
                                     </div>
                                     <div>
                                         <div class="text-slate-500 text-sm">Escríbenos</div>
-                                        <div class="text-white font-medium">hola@sabere.io</div>
+                                        <div class="text-white font-medium">contacto@sabereapp.com</div>
                                     </div>
                                 </div>
                                 
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-teal-400/20 flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <div class="text-slate-500 text-sm">Llámanos</div>
-                                        <div class="text-white font-medium">+1 (800) SABERE-ED</div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
                         <!-- Contact Form -->
                         <div class="bg-slate-800 rounded-2xl p-8">
+                            <!-- Success Message -->
+                            <div v-if="contactSuccess" class="mb-5 rounded-xl bg-teal-400/10 border border-teal-400/30 p-4">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-teal-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-teal-400 text-sm font-medium">¡Mensaje enviado correctamente! Nos pondremos en contacto pronto.</p>
+                                </div>
+                            </div>
+
                             <form @submit.prevent="submitContact" class="space-y-5">
                                 <div class="grid sm:grid-cols-2 gap-5">
                                     <div>
@@ -493,6 +505,7 @@ onMounted(() => {
                                             placeholder="Ej. Juan Pérez"
                                             class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 transition-colors"
                                         >
+                                        <p v-if="contactForm.errors.name" class="mt-1 text-red-400 text-xs">{{ contactForm.errors.name }}</p>
                                     </div>
                                     <div>
                                         <label class="block text-slate-400 text-sm mb-2">Institución Educativa</label>
@@ -502,17 +515,31 @@ onMounted(() => {
                                             placeholder="Nombre del Colegio"
                                             class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 transition-colors"
                                         >
+                                        <p v-if="contactForm.errors.institution" class="mt-1 text-red-400 text-xs">{{ contactForm.errors.institution }}</p>
                                     </div>
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-slate-400 text-sm mb-2">Correo Electrónico</label>
-                                    <input 
-                                        v-model="contactForm.email"
-                                        type="email" 
-                                        placeholder="email@institucion.edu"
-                                        class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 transition-colors"
-                                    >
+                                <div class="grid sm:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-slate-400 text-sm mb-2">Correo Electrónico</label>
+                                        <input 
+                                            v-model="contactForm.email"
+                                            type="email" 
+                                            placeholder="email@institucion.edu"
+                                            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 transition-colors"
+                                        >
+                                        <p v-if="contactForm.errors.email" class="mt-1 text-red-400 text-xs">{{ contactForm.errors.email }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-400 text-sm mb-2">Teléfono (opcional)</label>
+                                        <input 
+                                            v-model="contactForm.phone"
+                                            type="tel" 
+                                            placeholder="+58 412 1234567"
+                                            class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 transition-colors"
+                                        >
+                                        <p v-if="contactForm.errors.phone" class="mt-1 text-red-400 text-xs">{{ contactForm.errors.phone }}</p>
+                                    </div>
                                 </div>
                                 
                                 <div>
@@ -523,13 +550,16 @@ onMounted(() => {
                                         placeholder="¿En qué podemos ayudarte?"
                                         class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 transition-colors resize-none"
                                     ></textarea>
+                                    <p v-if="contactForm.errors.message" class="mt-1 text-red-400 text-xs">{{ contactForm.errors.message }}</p>
                                 </div>
                                 
                                 <button 
                                     type="submit"
-                                    class="w-full bg-teal-400 hover:bg-teal-300 text-slate-900 font-semibold py-4 rounded-2xl transition-colors"
+                                    :disabled="contactForm.processing"
+                                    class="w-full bg-teal-400 hover:bg-teal-300 text-slate-900 font-semibold py-4 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Enviar Mensaje
+                                    <span v-if="contactForm.processing">Enviando...</span>
+                                    <span v-else>Enviar Mensaje</span>
                                 </button>
                             </form>
                         </div>
@@ -555,22 +585,6 @@ onMounted(() => {
                             Transformando la educación con tecnología. Una plataforma integral para instituciones educativas modernas.
                         </p>
                         
-                        <!-- Newsletter -->
-                        <div>
-                            <h4 class="text-white font-semibold mb-3">Suscríbete al Newsletter</h4>
-                            <div class="flex gap-2">
-                                <input 
-                                    type="email" 
-                                    placeholder="tu@email.com"
-                                    class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 text-sm"
-                                >
-                                <button class="bg-teal-400 hover:bg-teal-300 text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     <div>

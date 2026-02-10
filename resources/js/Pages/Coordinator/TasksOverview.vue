@@ -117,12 +117,12 @@ onMounted(() => {
 
     <AppLayout>
         <template #header>
-            <div class="flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-4">
                 <h1 class="text-xl sm:text-2xl font-bold text-gray-900">Seguimiento de Tareas</h1>
                 <select
                     v-model="filter"
                     @change="handleFilterChange"
-                    class="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    class="flex-shrink-0 w-48 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="all">Todas las tareas</option>
                     <option value="pending">Con entregas pendientes</option>

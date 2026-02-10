@@ -160,6 +160,27 @@ export interface Schedule {
     time_range?: string;
 }
 
+export interface SchoolEvent {
+    id: number;
+    academic_period_id?: number;
+    created_by: number;
+    title: string;
+    description?: string;
+    type: 'academic' | 'sports' | 'cultural' | 'administrative';
+    start_date: string;
+    end_date?: string;
+    all_day: boolean;
+    location?: string;
+    color?: string;
+    visibility: 'all' | 'teachers' | 'students' | 'staff';
+    send_notification: boolean;
+    status: boolean;
+    creator?: User;
+    academic_period?: AcademicPeriod;
+    type_label?: string;
+    display_color?: string;
+}
+
 // Dashboard Stats
 export interface DashboardStats {
     total_users?: number;

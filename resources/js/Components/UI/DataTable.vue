@@ -210,23 +210,34 @@ const visibleColumns = computed(() => props.columns.filter(c => !c.hideOnMobile)
                 v-else
                 v-for="(item, index) in data"
                 :key="index"
-                class="bg-white rounded-lg shadow p-4 space-y-2"
+                class="bg-white rounded-lg shadow p-4"
                 @click="$emit('row-click', item)"
             >
                 <slot name="mobile-card" :item="item" :columns="visibleColumns" :getValue="getNestedValue">
-                    <div
-                        v-for="column in visibleColumns"
-                        :key="String(column.key)"
-                        class="flex justify-between items-start gap-2 py-1"
-                    >
-                        <span class="text-xs font-medium text-gray-500 uppercase flex-shrink-0">{{ column.label }}</span>
-                        <span class="text-sm text-gray-900 text-right">
-                            <slot :name="`cell-${String(column.key)}`" :item="item" :value="getNestedValue(item, String(column.key))">
-                                {{ getNestedValue(item, String(column.key)) }}
+                    <!-- Primera columna como título principal -->
+                    <div v-if="visibleColumns.length > 0" class="mb-2">
+                        <div class="font-medium text-gray-900">
+                            <slot :name="`cell-${String(visibleColumns[0].key)}`" :item="item" :value="getNestedValue(item, String(visibleColumns[0].key))">
+                                {{ getNestedValue(item, String(visibleColumns[0].key)) }}
                             </slot>
-                        </span>
+                        </div>
                     </div>
-                    <div v-if="$slots.actions" class="pt-2 border-t border-gray-100 flex justify-end">
+                    <!-- Resto de columnas en formato compacto -->
+                    <div v-if="visibleColumns.length > 1" class="space-y-1.5">
+                        <div
+                            v-for="column in visibleColumns.slice(1)"
+                            :key="String(column.key)"
+                            class="flex items-center justify-between text-sm"
+                        >
+                            <span class="text-gray-500">{{ column.label }}</span>
+                            <span class="text-gray-900">
+                                <slot :name="`cell-${String(column.key)}`" :item="item" :value="getNestedValue(item, String(column.key))">
+                                    {{ getNestedValue(item, String(column.key)) }}
+                                </slot>
+                            </span>
+                        </div>
+                    </div>
+                    <div v-if="$slots.actions" class="pt-3 mt-3 border-t border-gray-100 flex justify-end">
                         <slot name="actions" :item="item" />
                     </div>
                 </slot>

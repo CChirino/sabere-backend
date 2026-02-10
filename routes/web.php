@@ -15,6 +15,8 @@ use App\Http\Controllers\Web\Teacher\TaskController;
 use App\Http\Controllers\Web\Teacher\AttendanceController;
 use App\Http\Controllers\Web\Student\SectionChatController;
 use App\Http\Controllers\Web\Teacher\SectionChatController as TeacherSectionChatController;
+use App\Http\Controllers\Web\Admin\EventController;
+use App\Http\Controllers\Web\ContactController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,6 +27,10 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
     ]);
 });
+
+Route::post('/contact', [ContactController::class, 'send'])
+    ->middleware('throttle:5,1')
+    ->name('contact.send');
 
 Route::get('/demo', function () {
     return Inertia::render('Demo');
@@ -49,6 +55,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         
         Route::get('/roles', fn() => Inertia::render('Admin/Roles/Index'))->name('roles.index')->middleware('role:admin');
+
+        // Eventos (gestión)
+        Route::get('/events', fn() => Inertia::render('Admin/Events/Index'))->name('events.index');
+        Route::post('/events', [EventController::class, 'store'])->name('events.store');
+        Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+        Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
     });
 
     // Academic routes
@@ -158,6 +170,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/chat', [SectionChatController::class, 'store'])->name('chat.store');
         Route::delete('/chat/{message}', [SectionChatController::class, 'destroy'])->name('chat.destroy');
     });
+
+    // Events calendar (visible para todos los roles autenticados)
+    Route::get('/events', fn() => Inertia::render('Events/Calendar'))->name('events.calendar');
 
     // Guardian routes
     Route::prefix('guardian')->name('guardian.')->middleware('role:guardian')->group(function () {

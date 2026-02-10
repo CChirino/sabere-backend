@@ -110,6 +110,28 @@ onMounted(() => {
                 empty-message="No hay profesores registrados"
                 @page-change="handlePageChange"
             >
+                <template #mobile-card="{ item }">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <span class="text-blue-600 font-semibold">{{ item.name.charAt(0) }}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-medium text-gray-900 truncate">{{ item.name }}</div>
+                            <div class="text-sm text-gray-500 truncate">{{ item.email }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <Badge :color="item.assignments_count > 0 ? 'blue' : 'gray'">
+                            {{ item.assignments_count }} {{ item.assignments_count === 1 ? 'asignación' : 'asignaciones' }}
+                        </Badge>
+                        <Link
+                            :href="route('coordinator.teachers.show', item.id)"
+                            class="text-blue-600 hover:text-blue-900 font-medium text-sm"
+                        >
+                            Ver detalle
+                        </Link>
+                    </div>
+                </template>
                 <template #cell-name="{ item }">
                     <div class="flex items-center gap-3">
                         <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">

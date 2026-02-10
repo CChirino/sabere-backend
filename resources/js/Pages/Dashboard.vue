@@ -37,6 +37,7 @@ const getTaskTypeLabel = (type: string) => {
     };
     return labels[type] || type;
 };
+
 </script>
 
 <template>
@@ -328,5 +329,6 @@ const getTaskTypeLabel = (type: string) => {
                 <p v-else class="text-gray-500 text-center py-4">No tienes estudiantes registrados</p>
             </Card>
         </template>
+
     </AppLayout>
 </template>

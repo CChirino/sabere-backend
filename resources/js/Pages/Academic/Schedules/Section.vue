@@ -342,20 +342,20 @@ onMounted(() => {
 
     <AppLayout>
         <template #header>
-            <div class="flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-gray-900">
+            <div class="flex flex-col">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
                     Horario de Clases
-                    <span v-if="section" class="text-gray-500 font-normal">
-                        - {{ section.grade?.name }} {{ section.name }}
-                    </span>
                 </h1>
+                <span v-if="section" class="text-sm sm:text-base text-gray-500 font-normal">
+                    {{ section.grade?.name }} {{ section.name }}
+                </span>
             </div>
         </template>
 
         <!-- Recreo Configuration -->
         <Card class="mb-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                     <label class="flex items-center cursor-pointer">
                         <input 
                             type="checkbox" 
@@ -365,7 +365,7 @@ onMounted(() => {
                         <span class="ml-2 text-sm font-medium text-gray-700">Mostrar Recreo</span>
                     </label>
                     
-                    <div v-if="recreo.enabled" class="flex items-center space-x-2">
+                    <div v-if="recreo.enabled" class="flex items-center gap-2">
                         <span class="text-sm text-gray-500">de</span>
                         <select 
                             v-model="recreo.startTime" 
@@ -383,30 +383,30 @@ onMounted(() => {
                     </div>
                 </div>
                 
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-500 mr-2">Horario: 7:00 AM - 3:00 PM</span>
-                    <div class="flex items-center space-x-1 border-l pl-3">
+                <div class="flex items-center justify-between sm:justify-end gap-2">
+                    <span class="text-xs sm:text-sm text-gray-500 hidden sm:inline">7:00 AM - 3:00 PM</span>
+                    <div class="flex items-center gap-1">
                         <button
                             @click="downloadAsPDF"
                             :disabled="downloading || loading"
-                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sabere-accent disabled:opacity-50"
+                            class="inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sabere-accent disabled:opacity-50"
                             title="Descargar como PDF"
                         >
-                            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            PDF
+                            <span class="hidden sm:inline">PDF</span>
                         </button>
                         <button
                             @click="downloadAsImage"
                             :disabled="downloading || loading"
-                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sabere-accent disabled:opacity-50"
+                            class="inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sabere-accent disabled:opacity-50"
                             title="Descargar como imagen"
                         >
-                            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-4 h-4 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            Imagen
+                            <span class="hidden sm:inline">Imagen</span>
                         </button>
                     </div>
                 </div>
@@ -425,8 +425,8 @@ onMounted(() => {
 
         <!-- Calendar Grid View -->
         <Card v-else :padding="false" class="overflow-hidden">
-            <div ref="calendarRef" class="overflow-x-auto bg-white">
-                <div class="min-w-[900px]">
+            <div ref="calendarRef" class="overflow-x-auto bg-white -mx-1 sm:mx-0">
+                <div class="min-w-[600px] sm:min-w-[800px] lg:min-w-[900px]">
                     <!-- Header -->
                     <div class="flex bg-gray-50 border-b border-gray-200">
                         <div class="w-16 flex-shrink-0 px-2 py-3 text-xs font-medium text-gray-500 uppercase">
