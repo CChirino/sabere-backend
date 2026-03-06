@@ -47,8 +47,8 @@ class ReenrollmentController extends Controller
         // Obtener grados disponibles (siguiente grado o el mismo si es multi-sección)
         $currentGrade = $currentEnrollment->section->grade;
         $nextGrade = Grade::where('education_level_id', $currentGrade->education_level_id)
-            ->where('order', '>=', $currentGrade->order)
-            ->orderBy('order')
+            ->where('numeric_equivalent', '>=', $currentGrade->numeric_equivalent)
+            ->orderBy('numeric_equivalent')
             ->with('sections')
             ->get();
 
