@@ -38,6 +38,33 @@ const getTaskTypeLabel = (type: string) => {
     return labels[type] || type;
 };
 
+const getEventTypeColor = (type: string) => {
+    const colors: Record<string, string> = {
+        academic: 'bg-blue-100 text-blue-800 border-blue-200',
+        sports: 'bg-green-100 text-green-800 border-green-200',
+        cultural: 'bg-purple-100 text-purple-800 border-purple-200',
+        administrative: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800 border-gray-200';
+};
+
+const getEventTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+        academic: 'Académico',
+        sports: 'Deportivo',
+        cultural: 'Cultural',
+        administrative: 'Administrativo',
+    };
+    return labels[type] || type;
+};
+
+const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-VE', {
+        day: 'numeric',
+        month: 'short',
+    });
+};
 </script>
 
 <template>
@@ -209,6 +236,27 @@ const getTaskTypeLabel = (type: string) => {
                     </div>
                     <p v-else class="text-gray-500 text-center py-4">No hay tareas próximas</p>
                 </Card>
+
+                <!-- Próximos Eventos -->
+                <Card title="Próximos Eventos">
+                    <div v-if="dashboardData.upcoming_events?.length" class="space-y-3">
+                        <div
+                            v-for="event in dashboardData.upcoming_events"
+                            :key="event.id"
+                            class="flex items-center justify-between rounded-lg border p-3"
+                            :class="getEventTypeColor(event.type)"
+                        >
+                            <div class="flex-1">
+                                <h4 class="font-medium">{{ event.title }}</h4>
+                                <p class="text-sm opacity-75">{{ getEventTypeLabel(event.type) }}</p>
+                            </div>
+                            <div class="text-right ml-4">
+                                <span class="text-sm font-medium">{{ formatEventDate(event.start_date) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p v-else class="text-gray-500 text-center py-4">No hay eventos próximos</p>
+                </Card>
             </div>
         </template>
 
@@ -276,6 +324,27 @@ const getTaskTypeLabel = (type: string) => {
                         </div>
                         <p v-else class="text-gray-500 text-center py-4">Aún no hay calificaciones</p>
                     </Card>
+
+                    <!-- Próximos Eventos -->
+                    <Card title="Próximos Eventos">
+                        <div v-if="dashboardData.upcoming_events?.length" class="space-y-3">
+                            <div
+                                v-for="event in dashboardData.upcoming_events"
+                                :key="event.id"
+                                class="flex items-center justify-between rounded-lg border p-3"
+                                :class="getEventTypeColor(event.type)"
+                            >
+                                <div class="flex-1">
+                                    <h4 class="font-medium">{{ event.title }}</h4>
+                                    <p class="text-sm opacity-75">{{ getEventTypeLabel(event.type) }}</p>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <span class="text-sm font-medium">{{ formatEventDate(event.start_date) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-else class="text-gray-500 text-center py-4">No hay eventos próximos</p>
+                    </Card>
                 </div>
             </template>
             <template v-else>
@@ -327,6 +396,27 @@ const getTaskTypeLabel = (type: string) => {
                     </div>
                 </div>
                 <p v-else class="text-gray-500 text-center py-4">No tienes estudiantes registrados</p>
+            </Card>
+
+            <!-- Próximos Eventos -->
+            <Card title="Próximos Eventos" class="mt-6">
+                <div v-if="dashboardData.upcoming_events?.length" class="space-y-3">
+                    <div
+                        v-for="event in dashboardData.upcoming_events"
+                        :key="event.id"
+                        class="flex items-center justify-between rounded-lg border p-3"
+                        :class="getEventTypeColor(event.type)"
+                    >
+                        <div class="flex-1">
+                            <h4 class="font-medium">{{ event.title }}</h4>
+                            <p class="text-sm opacity-75">{{ getEventTypeLabel(event.type) }}</p>
+                        </div>
+                        <div class="text-right ml-4">
+                            <span class="text-sm font-medium">{{ formatEventDate(event.start_date) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <p v-else class="text-gray-500 text-center py-4">No hay eventos próximos</p>
             </Card>
         </template>
 

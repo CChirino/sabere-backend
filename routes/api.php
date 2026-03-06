@@ -15,9 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    // Public routes`
-    Route::post('/register', [RegisterController::class, 'register']);
-    Route::post('/login', [LoginController::class, 'login']);
+    // Public routes - con rate limiting
+    Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
     
     // Google OAuth routes
     Route::get('/login/google', [SocialAuthController::class, 'redirectToGoogle']);
@@ -38,7 +38,7 @@ Route::prefix('v1')->group(function () {
 
 
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Ruta para obtener el usuario autenticado
     Route::get('/user', function (Request $request) {
         return $request->user()->load('roles');
@@ -62,9 +62,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
             ->name('users.remove-roles');
     });
 
-    // Rutas académicas - acceso según rol (incluye estudiantes para consultas)
+    // Rutas académicas de SOLO LECTURA - accesible para todos los roles autenticados incluyendo estudiantes
     Route::middleware(['role:admin|director|coordinator|teacher|student'])->group(function () {
-        // Incluir rutas académicas (gestión completa)
+        require __DIR__.'/academic_read.php';
+    });
+
+    // Rutas académicas de ESCRITURA - solo para admin, director, coordinator, teacher
+    Route::middleware(['role:admin|director|coordinator|teacher'])->group(function () {
         require __DIR__.'/academic.php';
     });
 
@@ -92,9 +96,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
         Route::get('student/{studentId}/info', [StudentGuardianController::class, 'studentInfo']);
         Route::get('student/{studentId}/scores', function ($studentId) {
+            // HIGH-04: Verificar que el guardian tiene relación con el estudiante
+            $hasAccess = \App\Models\StudentGuardian::where('guardian_id', auth()->id())
+                ->where('student_id', $studentId)
+                ->where('status', true)
+                ->exists();
+            if (!$hasAccess) {
+                return response()->json(['message' => 'No tienes acceso a este estudiante'], 403);
+            }
             return app(TaskSubmissionController::class)->index(request()->merge(['student_id' => $studentId, 'status' => 'graded']));
         });
         Route::get('student/{studentId}/tasks', function ($studentId) {
+            // HIGH-04: Verificar que el guardian tiene relación con el estudiante
+            $hasAccess = \App\Models\StudentGuardian::where('guardian_id', auth()->id())
+                ->where('student_id', $studentId)
+                ->where('status', true)
+                ->exists();
+            if (!$hasAccess) {
+                return response()->json(['message' => 'No tienes acceso a este estudiante'], 403);
+            }
             return app(TaskController::class)->forStudent($studentId);
         });
         Route::get('terms', function () {

@@ -69,7 +69,9 @@ class AcademicPeriodController extends Controller
             );
         }
 
-        $period = AcademicPeriod::create($request->all());
+        $period = AcademicPeriod::create($request->only([
+            'name', 'code', 'school_year', 'start_date', 'end_date', 'status'
+        ]));
 
         return $this->sendResponse($period, 'Período académico creado exitosamente', 201);
     }
@@ -135,7 +137,9 @@ class AcademicPeriodController extends Controller
             );
         }
 
-        $period->update($request->all());
+        $period->update($request->only([
+            'name', 'code', 'school_year', 'start_date', 'end_date', 'status'
+        ]));
 
         return $this->sendResponse($period, 'Período académico actualizado exitosamente');
     }

@@ -113,7 +113,9 @@ class ScheduleController extends Controller
             );
         }
 
-        $schedule = Schedule::create($request->all());
+        $schedule = Schedule::create($request->only([
+            'subject_assignment_id', 'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status'
+        ]));
         $schedule->load([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
@@ -201,7 +203,9 @@ class ScheduleController extends Controller
             );
         }
 
-        $schedule->update($request->all());
+        $schedule->update($request->only([
+            'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status'
+        ]));
         $schedule->load([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',

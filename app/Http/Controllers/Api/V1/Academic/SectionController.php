@@ -73,7 +73,7 @@ class SectionController extends Controller
             );
         }
 
-        $section = Section::create($request->all());
+        $section = Section::create($request->only(['grade_id', 'academic_period_id', 'name', 'capacity', 'status']));
         $section->load(['grade.educationLevel', 'academicPeriod']);
 
         return $this->sendResponse($section, 'Sección creada exitosamente', 201);
@@ -132,7 +132,7 @@ class SectionController extends Controller
             );
         }
 
-        $section->update($request->all());
+        $section->update($request->only(['grade_id', 'academic_period_id', 'name', 'capacity', 'status']));
         $section->load(['grade.educationLevel', 'academicPeriod']);
 
         return $this->sendResponse($section, 'Sección actualizada exitosamente');

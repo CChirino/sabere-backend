@@ -59,7 +59,7 @@ class GradeController extends Controller
             return $this->sendError('Ya existe un grado con este número en el nivel educativo seleccionado', [], 409);
         }
 
-        $grade = Grade::create($request->all());
+        $grade = Grade::create($request->only(['education_level_id', 'name', 'numeric_equivalent', 'status']));
         $grade->load('educationLevel');
 
         return $this->sendResponse($grade, 'Grado creado exitosamente', 201);
@@ -118,7 +118,7 @@ class GradeController extends Controller
             return $this->sendError('Ya existe un grado con este número en el nivel educativo seleccionado', [], 409);
         }
 
-        $grade->update($request->all());
+        $grade->update($request->only(['education_level_id', 'name', 'numeric_equivalent', 'status']));
         $grade->load('educationLevel');
 
         return $this->sendResponse($grade, 'Grado actualizado exitosamente');

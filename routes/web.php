@@ -16,7 +16,9 @@ use App\Http\Controllers\Web\Teacher\AttendanceController;
 use App\Http\Controllers\Web\Student\SectionChatController;
 use App\Http\Controllers\Web\Teacher\SectionChatController as TeacherSectionChatController;
 use App\Http\Controllers\Web\Admin\EventController;
-use App\Http\Controllers\Web\ContactController;
+use App\Http\Controllers\Web\Admin\ReenrollmentController as AdminReenrollmentController;
+use App\Http\Controllers\Web\Admin\BulkNotificationController;
+use App\Http\Controllers\Web\Student\ReenrollmentController as StudentReenrollmentController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -55,6 +57,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         
         Route::get('/roles', fn() => Inertia::render('Admin/Roles/Index'))->name('roles.index')->middleware('role:admin');
+
+        // Admin Reenrollment Routes
+        Route::get('/reenrollments', [AdminReenrollmentController::class, 'index'])->name('reenrollments.index');
+        Route::get('/reenrollments/statistics', [AdminReenrollmentController::class, 'statistics'])->name('reenrollments.statistics');
+        Route::post('/reenrollments/{reenrollment}/approve', [AdminReenrollmentController::class, 'approve'])->name('reenrollments.approve');
+        Route::post('/reenrollments/{reenrollment}/reject', [AdminReenrollmentController::class, 'reject'])->name('reenrollments.reject');
+
+        // Admin Bulk Notifications
+        Route::get('/notifications/bulk', [BulkNotificationController::class, 'index'])->name('notifications.bulk');
+        Route::post('/notifications/bulk', [BulkNotificationController::class, 'send'])->name('notifications.send');
+        Route::get('/notifications/history', [BulkNotificationController::class, 'history'])->name('notifications.history');
 
         // Eventos (gestión)
         Route::get('/events', fn() => Inertia::render('Admin/Events/Index'))->name('events.index');
@@ -164,7 +177,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/tasks', fn() => Inertia::render('Student/Tasks/Index'))->name('tasks');
         Route::get('/tasks/{id}', fn($id) => Inertia::render('Student/Tasks/Show', ['taskId' => (int)$id]))->name('tasks.show');
         Route::get('/scores', fn() => Inertia::render('Student/Scores'))->name('scores');
-        
+
+        // Reinscripciones
+        Route::get('/reenrollment', [StudentReenrollmentController::class, 'create'])->name('reenrollment.create');
+        Route::post('/reenrollment', [StudentReenrollmentController::class, 'store'])->name('reenrollment.store');
+        Route::get('/reenrollment/status', [StudentReenrollmentController::class, 'status'])->name('reenrollment.status');
+        Route::post('/reenrollment/{reenrollment}/cancel', [StudentReenrollmentController::class, 'cancel'])->name('reenrollment.cancel');
+
         // Chat de sección
         Route::get('/chat', [SectionChatController::class, 'index'])->name('chat');
         Route::post('/chat', [SectionChatController::class, 'store'])->name('chat.store');

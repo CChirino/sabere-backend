@@ -100,7 +100,10 @@ class TaskController extends Controller
             );
         }
 
-        $task = Task::create($request->all());
+        $task = Task::create($request->only([
+            'subject_assignment_id', 'term_id', 'title', 'description', 'instructions',
+            'type', 'max_score', 'weight', 'due_date', 'available_from', 'is_published', 'status'
+        ]));
         $task->load(['subjectAssignment.subject', 'subjectAssignment.section.grade', 'term']);
 
         return $this->sendResponse($task, 'Tarea creada exitosamente', 201);
@@ -164,7 +167,10 @@ class TaskController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $task->update($request->all());
+        $task->update($request->only([
+            'title', 'description', 'instructions', 'type', 'max_score',
+            'weight', 'due_date', 'available_from', 'is_published', 'status'
+        ]));
         $task->load(['subjectAssignment.subject', 'subjectAssignment.section.grade', 'term']);
 
         return $this->sendResponse($task, 'Tarea actualizada exitosamente');

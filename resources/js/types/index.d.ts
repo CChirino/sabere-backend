@@ -206,6 +206,7 @@ export interface DashboardData {
     current_scores?: StudentScore[];
     subjects?: SubjectAssignment[];
     upcoming_tasks?: Task[];
+    upcoming_events?: SchoolEvent[];
     sections?: Section[];
     students?: { student: User; enrollment?: Enrollment; pending_tasks: number; current_average?: number }[];
     enrollment?: Enrollment;

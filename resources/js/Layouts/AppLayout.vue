@@ -61,6 +61,22 @@ const navigation = computed<NavItem[]>(() => [
         icon: 'shield',
         show: isAdmin.value,
     },
+    // Reinscripciones - Admin
+    {
+        name: 'Reinscripciones',
+        href: route('admin.reenrollments.index'),
+        routeName: 'admin.reenrollments.*',
+        icon: 'refresh',
+        show: hasRole(['admin', 'director']),
+    },
+    // Notificaciones Masivas - Admin
+    {
+        name: 'Notificaciones Masivas',
+        href: route('admin.notifications.bulk'),
+        routeName: 'admin.notifications.*',
+        icon: 'bell',
+        show: hasRole(['admin', 'director']),
+    },
     // Académico (solo admin y director)
     {
         name: 'Períodos Académicos',
@@ -205,13 +221,13 @@ const navigation = computed<NavItem[]>(() => [
         icon: 'chat',
         show: isStudent.value,
     },
-    // Representante
+    // Reinscripción - Estudiante
     {
-        name: 'Mis Representados',
-        href: route('guardian.students'),
-        routeName: 'guardian.students',
-        icon: 'users',
-        show: isGuardian.value,
+        name: 'Reinscripción',
+        href: route('student.reenrollment.create'),
+        routeName: 'student.reenrollment.*',
+        icon: 'refresh',
+        show: isStudent.value,
     },
     // Eventos - Gestión (Admin/Director)
     {
@@ -458,6 +474,26 @@ const isCurrentRoute = (routeName: string): boolean => {
                         >
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v-4m0 0l-2 2m2-2l2 2" />
+                        </svg>
+                        <svg
+                            v-else-if="item.icon === 'refresh'"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <svg
+                            v-else-if="item.icon === 'bell'"
+                            :class="sidebarCollapsed ? '' : 'mr-3'"
+                            class="h-5 w-5 flex-shrink-0"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
                         <span v-if="!sidebarCollapsed" class="truncate">{{ item.name }}</span>
                     </Link>

@@ -84,7 +84,9 @@ class SubjectAssignmentController extends Controller
             );
         }
 
-        $assignment = SubjectAssignment::create($request->all());
+        $assignment = SubjectAssignment::create($request->only([
+            'teacher_id', 'subject_id', 'section_id', 'academic_period_id', 'status'
+        ]));
         $assignment->load(['teacher', 'subject', 'section.grade', 'academicPeriod']);
 
         return $this->sendResponse($assignment, 'Asignación creada exitosamente', 201);
@@ -137,7 +139,7 @@ class SubjectAssignmentController extends Controller
             }
         }
 
-        $assignment->update($request->all());
+        $assignment->update($request->only(['teacher_id', 'status']));
         $assignment->load(['teacher', 'subject', 'section.grade', 'academicPeriod']);
 
         return $this->sendResponse($assignment, 'Asignación actualizada exitosamente');

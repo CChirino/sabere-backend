@@ -101,7 +101,9 @@ class EnrollmentController extends Controller
             }
         }
 
-        $enrollment = Enrollment::create($request->all());
+        $enrollment = Enrollment::create($request->only([
+            'student_id', 'section_id', 'academic_period_id', 'enrollment_date', 'status', 'notes'
+        ]));
         $enrollment->load(['student', 'section.grade.educationLevel', 'academicPeriod']);
 
         return $this->sendResponse($enrollment, 'Inscripción creada exitosamente', 201);
@@ -161,7 +163,7 @@ class EnrollmentController extends Controller
             }
         }
 
-        $enrollment->update($request->all());
+        $enrollment->update($request->only(['section_id', 'status', 'notes']));
         $enrollment->load(['student', 'section.grade.educationLevel', 'academicPeriod']);
 
         return $this->sendResponse($enrollment, 'Inscripción actualizada exitosamente');

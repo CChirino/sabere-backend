@@ -75,6 +75,11 @@ class UserController extends Controller
             return back()->with('error', 'No puedes eliminar tu propia cuenta.');
         }
 
+        // Prevent deletion of users with critical roles
+        if ($user->hasAnyRole(['super_admin', 'admin'])) {
+            return back()->with('error', 'No se puede eliminar un usuario con rol de administrador.');
+        }
+
         $user->delete();
 
         return back()->with('success', 'Usuario eliminado correctamente.');

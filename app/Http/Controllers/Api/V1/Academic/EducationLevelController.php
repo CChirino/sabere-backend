@@ -40,7 +40,7 @@ class EducationLevelController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $educationLevel = EducationLevel::create($request->all());
+        $educationLevel = EducationLevel::create($request->only(['name', 'code', 'description', 'status']));
 
         return $this->sendResponse($educationLevel, 'Nivel educativo creado exitosamente', 201);
     }
@@ -90,7 +90,7 @@ class EducationLevelController extends Controller
         }
 
 
-        $educationLevel->update($request->all());
+        $educationLevel->update($request->only(['name', 'code', 'description', 'status']));
 
         return $this->sendResponse($educationLevel, 'Nivel educativo actualizado exitosamente');
     }

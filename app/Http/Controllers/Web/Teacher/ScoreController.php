@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentScore;
 use App\Models\SubjectAssignment;
 use App\Models\Term;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class ScoreController extends Controller
@@ -44,6 +45,9 @@ class ScoreController extends Controller
             ]
         );
 
+        // Send notifications to student and guardians
+        NotificationService::notifyScoreAssigned($score);
+
         return back()->with('success', 'Calificación guardada correctamente.');
     }
 
@@ -67,9 +71,11 @@ class ScoreController extends Controller
             return back()->withErrors(['error' => 'No tienes permiso para calificar esta materia.']);
         }
 
+        $notifiedScores = [];
+
         foreach ($validated['scores'] as $scoreData) {
             if ($scoreData['score'] !== null && $scoreData['score'] !== '') {
-                StudentScore::updateOrCreate(
+                $score = StudentScore::updateOrCreate(
                     [
                         'student_id' => $scoreData['student_id'],
                         'subject_assignment_id' => $validated['subject_assignment_id'],
@@ -82,7 +88,13 @@ class ScoreController extends Controller
                         'graded_at' => now(),
                     ]
                 );
+                $notifiedScores[] = $score;
             }
+        }
+
+        // Send notifications for each score
+        foreach ($notifiedScores as $score) {
+            NotificationService::notifyScoreAssigned($score);
         }
 
         return back()->with('success', 'Calificaciones guardadas correctamente.');
@@ -107,6 +119,16 @@ class ScoreController extends Controller
         StudentScore::where('subject_assignment_id', $validated['subject_assignment_id'])
             ->where('term_id', $validated['term_id'])
             ->update(['is_final' => true]);
+
+        // Notify students and guardians
+        $term = Term::find($validated['term_id']);
+        NotificationService::notifyScoresFinalized(
+            $validated['subject_assignment_id'],
+            $validated['term_id'],
+            $assignment->subject->name ?? 'Materia',
+            $term->name ?? 'Período',
+            auth()->user()
+        );
 
         return back()->with('success', 'Calificaciones finalizadas correctamente.');
     }

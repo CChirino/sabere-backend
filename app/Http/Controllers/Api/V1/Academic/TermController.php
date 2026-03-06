@@ -70,7 +70,9 @@ class TermController extends Controller
             );
         }
 
-        $term = Term::create($request->all());
+        $term = Term::create($request->only([
+            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status'
+        ]));
         $term->load('academicPeriod');
 
         return $this->sendResponse($term, 'Lapso creado exitosamente', 201);
@@ -129,7 +131,9 @@ class TermController extends Controller
             );
         }
 
-        $term->update($request->all());
+        $term->update($request->only([
+            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status'
+        ]));
         $term->load('academicPeriod');
 
         return $this->sendResponse($term, 'Lapso actualizado exitosamente');

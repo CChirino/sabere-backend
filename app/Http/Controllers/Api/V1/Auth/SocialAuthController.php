@@ -53,9 +53,13 @@ class SocialAuthController extends Controller
             );
 
         } catch (\Exception $e) {
+            \Log::error('Google OAuth Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return $this->sendError(
                 'Error al autenticar con Google',
-                ['error' => $e->getMessage()],
+                [],
                 401
             );
         }

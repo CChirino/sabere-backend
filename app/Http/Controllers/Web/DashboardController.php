@@ -12,6 +12,7 @@ use App\Models\TaskSubmission;
 use App\Models\StudentScore;
 use App\Models\AcademicPeriod;
 use App\Models\Term;
+use App\Models\Event;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -147,6 +148,14 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Eventos próximos visibles para profesores
+        $upcomingEvents = Event::active()
+            ->visibleForRole('teachers')
+            ->whereDate('end_date', '>=', now())
+            ->orderBy('start_date')
+            ->limit(5)
+            ->get();
+
         return [
             'assignments' => $assignments,
             'stats' => [
@@ -157,6 +166,7 @@ class DashboardController extends Controller
                 'pending_submissions' => $pendingSubmissions,
             ],
             'upcoming_tasks' => $upcomingTasks,
+            'upcoming_events' => $upcomingEvents,
         ];
     }
 
@@ -198,6 +208,14 @@ class DashboardController extends Controller
             ->where('status', true)
             ->get();
 
+        // Eventos próximos visibles para estudiantes
+        $upcomingEvents = Event::active()
+            ->visibleForRole('students')
+            ->whereDate('end_date', '>=', now())
+            ->orderBy('start_date')
+            ->limit(5)
+            ->get();
+
         return [
             'enrollment' => $enrollment,
             'stats' => [
@@ -208,6 +226,7 @@ class DashboardController extends Controller
             'pending_tasks' => $pendingTasks,
             'current_scores' => $currentScores,
             'subjects' => $subjects,
+            'upcoming_events' => $upcomingEvents,
         ];
     }
 
@@ -259,12 +278,20 @@ class DashboardController extends Controller
             ];
         });
 
+        // Eventos próximos visibles para representantes (mismos que estudiantes)
+        $upcomingEvents = Event::active()
+            ->visibleForRole('students')
+            ->whereDate('end_date', '>=', now())
+            ->orderBy('start_date')
+            ->limit(5)
+            ->get();
+
         return [
             'students' => $studentsData,
             'stats' => [
                 'total_students' => $students->count(),
             ],
+            'upcoming_events' => $upcomingEvents,
         ];
     }
-
 }

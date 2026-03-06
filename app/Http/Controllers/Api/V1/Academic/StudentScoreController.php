@@ -167,7 +167,7 @@ class StudentScoreController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $score->update($request->all());
+        $score->update($request->only(['score', 'observations', 'is_final']));
         $score->load(['student', 'subjectAssignment.subject', 'term', 'gradedBy']);
 
         return $this->sendResponse($score, 'Calificación actualizada exitosamente');

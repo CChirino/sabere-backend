@@ -18,103 +18,99 @@ use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\EventController;
 use Illuminate\Support\Facades\Route;
 
-// Agrupar rutas bajo el prefijo v1
+/*
+|--------------------------------------------------------------------------
+| Academic API Write Routes (POST/PUT/DELETE)
+|--------------------------------------------------------------------------
+| These routes require admin, director, coordinator, or teacher roles.
+| Read-only (GET) routes are in academic_read.php.
+|--------------------------------------------------------------------------
+*/
+
 Route::prefix('v1')->group(function () {
-    // Rutas para Niveles Educativos
-    Route::apiResource('education-levels', EducationLevelController::class)
-        ->except(['create', 'edit']);
+    // Niveles Educativos (escritura)
+    Route::post('education-levels', [EducationLevelController::class, 'store']);
+    Route::put('education-levels/{id}', [EducationLevelController::class, 'update']);
+    Route::delete('education-levels/{id}', [EducationLevelController::class, 'destroy']);
 
-    // Rutas para Grados
-    Route::apiResource('grades', GradeController::class)
-        ->except(['create', 'edit']);
-    Route::get('grades/{id}/subjects', [GradeController::class, 'subjects']);
+    // Grados (escritura)
+    Route::post('grades', [GradeController::class, 'store']);
+    Route::put('grades/{id}', [GradeController::class, 'update']);
+    Route::delete('grades/{id}', [GradeController::class, 'destroy']);
 
-    // Rutas para Áreas de Conocimiento
-    Route::apiResource('subject-areas', SubjectAreaController::class)
-        ->except(['create', 'edit']);
-    Route::get('subject-areas/{id}/subjects', [SubjectAreaController::class, 'subjects']);
+    // Áreas de Conocimiento (escritura)
+    Route::post('subject-areas', [SubjectAreaController::class, 'store']);
+    Route::put('subject-areas/{id}', [SubjectAreaController::class, 'update']);
+    Route::delete('subject-areas/{id}', [SubjectAreaController::class, 'destroy']);
 
-    // Rutas para Materias
-    Route::apiResource('subjects', SubjectController::class)
-        ->except(['create', 'edit']);
+    // Materias (escritura)
+    Route::post('subjects', [SubjectController::class, 'store']);
+    Route::put('subjects/{id}', [SubjectController::class, 'update']);
+    Route::delete('subjects/{id}', [SubjectController::class, 'destroy']);
     Route::post('subjects/{subject}/assign-grade', [SubjectController::class, 'assignToGrade']);
     Route::delete('subjects/{subject}/grades/{grade}/{schoolYear}', [SubjectController::class, 'removeFromGrade']);
-    Route::get('subjects/{id}/grades', [SubjectController::class, 'grades']);
 
-    // Rutas para Períodos Académicos
-    Route::apiResource('academic-periods', AcademicPeriodController::class)
-        ->except(['create', 'edit']);
-    Route::get('academic-periods/by-year/{schoolYear}', [AcademicPeriodController::class, 'bySchoolYear']);
-    Route::get('academic-periods/current', [AcademicPeriodController::class, 'current']);
+    // Períodos Académicos (escritura)
+    Route::post('academic-periods', [AcademicPeriodController::class, 'store']);
+    Route::put('academic-periods/{id}', [AcademicPeriodController::class, 'update']);
+    Route::delete('academic-periods/{id}', [AcademicPeriodController::class, 'destroy']);
 
-    // Rutas para Secciones
-    Route::apiResource('sections', SectionController::class)
-        ->except(['create', 'edit']);
-    Route::get('sections/{id}/students', [SectionController::class, 'students']);
-    Route::get('sections/{id}/subjects', [SectionController::class, 'subjects']);
+    // Secciones (escritura)
+    Route::post('sections', [SectionController::class, 'store']);
+    Route::put('sections/{id}', [SectionController::class, 'update']);
+    Route::delete('sections/{id}', [SectionController::class, 'destroy']);
 
-    // Rutas para Lapsos
-    Route::apiResource('terms', TermController::class)
-        ->except(['create', 'edit']);
-    Route::get('terms/current', [TermController::class, 'current']);
-    Route::get('terms/by-period/{academicPeriodId}', [TermController::class, 'byAcademicPeriod']);
+    // Lapsos (escritura)
+    Route::post('terms', [TermController::class, 'store']);
+    Route::put('terms/{id}', [TermController::class, 'update']);
+    Route::delete('terms/{id}', [TermController::class, 'destroy']);
 
-    // Rutas para Inscripciones
-    Route::apiResource('enrollments', EnrollmentController::class)
-        ->except(['create', 'edit']);
-    Route::get('enrollments/by-student/{studentId}', [EnrollmentController::class, 'byStudent']);
+    // Inscripciones (escritura)
+    Route::post('enrollments', [EnrollmentController::class, 'store']);
+    Route::put('enrollments/{id}', [EnrollmentController::class, 'update']);
+    Route::delete('enrollments/{id}', [EnrollmentController::class, 'destroy']);
     Route::post('enrollments/{id}/transfer', [EnrollmentController::class, 'transfer']);
 
-    // Rutas para Asignaciones de Materias (Profesor-Materia-Sección)
-    Route::apiResource('subject-assignments', SubjectAssignmentController::class)
-        ->except(['create', 'edit']);
-    Route::get('subject-assignments/by-teacher/{teacherId}', [SubjectAssignmentController::class, 'byTeacher']);
-    Route::get('subject-assignments/{id}/students', [SubjectAssignmentController::class, 'students']);
+    // Asignaciones de Materias (escritura)
+    Route::post('subject-assignments', [SubjectAssignmentController::class, 'store']);
+    Route::put('subject-assignments/{id}', [SubjectAssignmentController::class, 'update']);
+    Route::delete('subject-assignments/{id}', [SubjectAssignmentController::class, 'destroy']);
 
-    // Rutas para Tareas
-    Route::apiResource('tasks', TaskController::class)
-        ->except(['create', 'edit']);
+    // Tareas (escritura)
+    Route::post('tasks', [TaskController::class, 'store']);
+    Route::put('tasks/{id}', [TaskController::class, 'update']);
+    Route::delete('tasks/{id}', [TaskController::class, 'destroy']);
     Route::post('tasks/{id}/toggle-publish', [TaskController::class, 'togglePublish']);
-    Route::get('tasks/for-student/{studentId}', [TaskController::class, 'forStudent']);
 
-    // Rutas para Entregas de Tareas
-    Route::apiResource('task-submissions', TaskSubmissionController::class)
-        ->except(['create', 'edit', 'update', 'destroy']);
+    // Entregas de Tareas (escritura)
     Route::post('task-submissions', [TaskSubmissionController::class, 'store']);
     Route::post('task-submissions/{id}/grade', [TaskSubmissionController::class, 'grade']);
     Route::post('task-submissions/{id}/return', [TaskSubmissionController::class, 'returnForCorrection']);
-    Route::get('task-submissions/by-student/{studentId}', [TaskSubmissionController::class, 'byStudent']);
-    Route::get('task-submissions/pending-for-teacher', [TaskSubmissionController::class, 'pendingForTeacher']);
 
-    // Rutas para Calificaciones
-    Route::apiResource('student-scores', StudentScoreController::class)
-        ->except(['create', 'edit']);
-    Route::get('student-scores/report-card/{studentId}/{termId}', [StudentScoreController::class, 'reportCard']);
-    Route::get('student-scores/by-student/{studentId}', [StudentScoreController::class, 'byStudent']);
+    // Calificaciones (escritura)
+    Route::post('student-scores', [StudentScoreController::class, 'store']);
+    Route::put('student-scores/{id}', [StudentScoreController::class, 'update']);
+    Route::delete('student-scores/{id}', [StudentScoreController::class, 'destroy']);
     Route::post('student-scores/bulk', [StudentScoreController::class, 'bulkStore']);
 
-    // Rutas para Notas Manuales
-    Route::apiResource('manual-scores', ManualScoreController::class)
-        ->except(['create', 'edit']);
+    // Notas Manuales (escritura)
+    Route::post('manual-scores', [ManualScoreController::class, 'store']);
+    Route::put('manual-scores/{id}', [ManualScoreController::class, 'update']);
+    Route::delete('manual-scores/{id}', [ManualScoreController::class, 'destroy']);
     Route::post('manual-scores/bulk', [ManualScoreController::class, 'storeBulk']);
 
-    // Rutas para Representantes-Estudiantes
-    Route::apiResource('student-guardians', StudentGuardianController::class)
-        ->except(['create', 'edit']);
-    Route::get('student-guardians/students-by-guardian/{guardianId}', [StudentGuardianController::class, 'studentsByGuardian']);
-    Route::get('student-guardians/guardians-by-student/{studentId}', [StudentGuardianController::class, 'guardiansByStudent']);
-    Route::get('student-guardians/student-info/{studentId}', [StudentGuardianController::class, 'studentInfo']);
+    // Representantes-Estudiantes (escritura)
+    Route::post('student-guardians', [StudentGuardianController::class, 'store']);
+    Route::put('student-guardians/{id}', [StudentGuardianController::class, 'update']);
+    Route::delete('student-guardians/{id}', [StudentGuardianController::class, 'destroy']);
 
-    // Rutas para Horarios
-    Route::apiResource('schedules', ScheduleController::class)
-        ->except(['create', 'edit']);
-    Route::get('schedules/by-section/{sectionId}', [ScheduleController::class, 'bySection']);
-    Route::get('schedules/by-teacher/{teacherId}', [ScheduleController::class, 'byTeacher']);
-    Route::get('schedules/by-student/{studentId}', [ScheduleController::class, 'byStudent']);
-    Route::get('schedules/today/section/{sectionId}', [ScheduleController::class, 'todayBySection']);
+    // Horarios (escritura)
+    Route::post('schedules', [ScheduleController::class, 'store']);
+    Route::put('schedules/{id}', [ScheduleController::class, 'update']);
+    Route::delete('schedules/{id}', [ScheduleController::class, 'destroy']);
 
-    // Rutas para Eventos
-    Route::apiResource('events', EventController::class)
-        ->except(['create', 'edit']);
-    Route::get('events-upcoming', [EventController::class, 'upcoming']);
+    // Eventos (escritura)
+    Route::post('events', [EventController::class, 'store']);
+    Route::put('events/{id}', [EventController::class, 'update']);
+    Route::delete('events/{id}', [EventController::class, 'destroy']);
 });

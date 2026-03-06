@@ -41,6 +41,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Revocar todos los tokens API del usuario antes de cerrar sesión
+        if ($request->user()) {
+            $request->user()->tokens()->delete();
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

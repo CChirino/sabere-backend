@@ -48,9 +48,9 @@ class TaskSubmissionController extends Controller
         $validator = Validator::make($request->all(), [
             'task_id' => 'required|exists:tasks,id',
             'content' => 'nullable|string',
-            'file' => 'nullable|file|max:10240', // 10MB max (single file)
+            'file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip,rar,txt,odt,ods,odp,webp',
             'files' => 'nullable|array',
-            'files.*' => 'file|max:10240', // 10MB max per file
+            'files.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip,rar,txt,odt,ods,odp,webp',
         ]);
 
         if ($validator->fails()) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web\Teacher;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Models\SubjectAssignment;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
@@ -36,6 +37,12 @@ class TaskController extends Controller
 
         Task::create($validated);
 
+        // Send notifications if task is published
+        if ($validated['is_published'] ?? false) {
+            $task = Task::latest()->first();
+            NotificationService::notifyTaskCreated($task);
+        }
+
         return redirect()->route('teacher.tasks.index')->with('success', 'Tarea creada correctamente.');
     }
 
@@ -65,6 +72,11 @@ class TaskController extends Controller
 
         $task->update($validated);
 
+        // Send notifications if task was not published before and now is published
+        if (($validated['is_published'] ?? false) && !$task->is_published) {
+            NotificationService::notifyTaskCreated($task->fresh());
+        }
+
         return back()->with('success', 'Tarea actualizada correctamente.');
     }
 
@@ -79,6 +91,11 @@ class TaskController extends Controller
         }
 
         $task->update(['is_published' => !$task->is_published]);
+
+        // Send notifications if task is now published
+        if ($task->is_published) {
+            NotificationService::notifyTaskCreated($task->fresh());
+        }
 
         $message = $task->is_published ? 'Tarea publicada correctamente.' : 'Tarea despublicada correctamente.';
         return back()->with('success', $message);

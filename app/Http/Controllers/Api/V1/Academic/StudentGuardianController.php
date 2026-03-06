@@ -85,7 +85,10 @@ class StudentGuardianController extends Controller
                 ->update(['is_primary' => false]);
         }
 
-        $relation = StudentGuardian::create($request->all());
+        $relation = StudentGuardian::create($request->only([
+            'guardian_id', 'student_id', 'relationship', 'is_primary',
+            'can_pickup', 'emergency_contact', 'phone', 'status'
+        ]));
         $relation->load(['guardian', 'student']);
 
         return $this->sendResponse($relation, 'Relación creada exitosamente', 201);
@@ -136,7 +139,9 @@ class StudentGuardianController extends Controller
                 ->update(['is_primary' => false]);
         }
 
-        $relation->update($request->all());
+        $relation->update($request->only([
+            'relationship', 'is_primary', 'can_pickup', 'emergency_contact', 'phone', 'status'
+        ]));
         $relation->load(['guardian', 'student']);
 
         return $this->sendResponse($relation, 'Relación actualizada exitosamente');

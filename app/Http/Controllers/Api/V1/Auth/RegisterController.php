@@ -33,6 +33,7 @@ class RegisterController extends Controller
     public function register(RegisterRequest $request)
     {
         $user = $this->create($request->validated());
+        $user->assignRole('student');
         
         $token = $user->createToken('auth-token')->plainTextToken;
 

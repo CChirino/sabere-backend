@@ -40,7 +40,7 @@ class SubjectAreaController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $subjectArea = SubjectArea::create($request->all());
+        $subjectArea = SubjectArea::create($request->only(['name', 'code', 'description', 'status']));
 
         return $this->sendResponse($subjectArea, 'Área de conocimiento creada exitosamente', 201);
     }
@@ -88,7 +88,7 @@ class SubjectAreaController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $subjectArea->update($request->all());
+        $subjectArea->update($request->only(['name', 'code', 'description', 'status']));
 
         return $this->sendResponse($subjectArea, 'Área de conocimiento actualizada exitosamente');
     }

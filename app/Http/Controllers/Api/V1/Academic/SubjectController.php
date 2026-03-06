@@ -52,7 +52,7 @@ class SubjectController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $subject = Subject::create($request->all());
+        $subject = Subject::create($request->only(['subject_area_id', 'name', 'code', 'description', 'status']));
         $subject->load('subjectArea');
 
         return $this->sendResponse($subject, 'Materia creada exitosamente', 201);
@@ -102,7 +102,7 @@ class SubjectController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-        $subject->update($request->all());
+        $subject->update($request->only(['subject_area_id', 'name', 'code', 'description', 'status']));
         $subject->load('subjectArea');
 
         return $this->sendResponse($subject, 'Materia actualizada exitosamente');
