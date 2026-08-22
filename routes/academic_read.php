@@ -2,20 +2,20 @@
 
 use App\Http\Controllers\Api\V1\Academic\AcademicPeriodController;
 use App\Http\Controllers\Api\V1\Academic\EducationLevelController;
-use App\Http\Controllers\Api\V1\Academic\GradeController;
-use App\Http\Controllers\Api\V1\Academic\SubjectAreaController;
-use App\Http\Controllers\Api\V1\Academic\SubjectController;
-use App\Http\Controllers\Api\V1\Academic\SectionController;
-use App\Http\Controllers\Api\V1\Academic\TermController;
 use App\Http\Controllers\Api\V1\Academic\EnrollmentController;
+use App\Http\Controllers\Api\V1\Academic\EventController;
+use App\Http\Controllers\Api\V1\Academic\GradeController;
+use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
+use App\Http\Controllers\Api\V1\Academic\ScheduleController;
+use App\Http\Controllers\Api\V1\Academic\SectionController;
+use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
+use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
+use App\Http\Controllers\Api\V1\Academic\SubjectAreaController;
 use App\Http\Controllers\Api\V1\Academic\SubjectAssignmentController;
+use App\Http\Controllers\Api\V1\Academic\SubjectController;
 use App\Http\Controllers\Api\V1\Academic\TaskController;
 use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
-use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
-use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
-use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
-use App\Http\Controllers\Api\V1\Academic\ScheduleController;
-use App\Http\Controllers\Api\V1\Academic\EventController;
+use App\Http\Controllers\Api\V1\Academic\TermController;
 use Illuminate\Support\Facades\Route;
 
 /*

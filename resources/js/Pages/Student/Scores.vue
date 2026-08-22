@@ -96,11 +96,11 @@ const tasksBySubject = computed(() => {
     return grouped;
 });
 
-const getSubjectAverage = (tasks: GradedTask[]) => {
-    if (!tasks.length) return 0;
+const getSubjectAverage = (tasks: GradedTask[]): string => {
+    if (!tasks.length) return '0.00';
     const totalScore = tasks.reduce((acc, t) => acc + t.score, 0);
     const totalMax = tasks.reduce((acc, t) => acc + t.max_score, 0);
-    return ((totalScore / totalMax) * 20).toFixed(2); // Normalize to 20 points
+    return ((totalScore / totalMax) * 20).toFixed(2);
 };
 
 const hasGrades = computed(() => gradedTasks.value.length > 0);

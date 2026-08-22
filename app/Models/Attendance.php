@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Attendance extends Model
 {
-    use HasFactory, SoftDeletes;
+    // MEJORA-04: Audit logging para cambios en asistencia
+    use HasFactory, LogsActivity, SoftDeletes;
 
     protected $fillable = [
         'student_id',
@@ -26,9 +29,30 @@ class Attendance extends Model
         'date' => 'date',
     ];
 
+    /**
+     * MEJORA-04: Configuración del audit log para asistencia.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['student_id', 'status', 'notes', 'date', 'recorded_by'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->useLogName('asistencia')
+            ->setDescriptionForEvent(fn (string $eventName) => match ($eventName) {
+                'created' => 'Asistencia registrada',
+                'updated' => 'Asistencia modificada',
+                'deleted' => 'Asistencia eliminada',
+                default => "Asistencia: {$eventName}",
+            });
+    }
+
     const STATUS_PRESENT = 'present';
+
     const STATUS_ABSENT = 'absent';
+
     const STATUS_LATE = 'late';
+
     const STATUS_EXCUSED = 'excused';
 
     public function student(): BelongsTo
@@ -74,7 +98,7 @@ class Attendance extends Model
         }
 
         $total = $query->count();
-        
+
         if ($total === 0) {
             return [
                 'total_classes' => 0,

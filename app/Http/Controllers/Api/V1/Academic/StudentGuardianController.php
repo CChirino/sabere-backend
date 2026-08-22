@@ -7,8 +7,8 @@ use App\Models\StudentGuardian;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class StudentGuardianController extends Controller
 {
@@ -56,13 +56,13 @@ class StudentGuardianController extends Controller
 
         // Verificar que el guardian tenga rol de representante
         $guardian = User::find($request->guardian_id);
-        if (!$guardian->hasRole('guardian')) {
+        if (! $guardian->hasRole('guardian')) {
             return $this->sendError('El usuario seleccionado no tiene rol de representante', [], 422);
         }
 
         // Verificar que el student tenga rol de estudiante
         $student = User::find($request->student_id);
-        if (!$student->hasRole('student')) {
+        if (! $student->hasRole('student')) {
             return $this->sendError('El usuario seleccionado no tiene rol de estudiante', [], 422);
         }
 
@@ -87,7 +87,7 @@ class StudentGuardianController extends Controller
 
         $relation = StudentGuardian::create($request->only([
             'guardian_id', 'student_id', 'relationship', 'is_primary',
-            'can_pickup', 'emergency_contact', 'phone', 'status'
+            'can_pickup', 'emergency_contact', 'phone', 'status',
         ]));
         $relation->load(['guardian', 'student']);
 
@@ -140,7 +140,7 @@ class StudentGuardianController extends Controller
         }
 
         $relation->update($request->only([
-            'relationship', 'is_primary', 'can_pickup', 'emergency_contact', 'phone', 'status'
+            'relationship', 'is_primary', 'can_pickup', 'emergency_contact', 'phone', 'status',
         ]));
         $relation->load(['guardian', 'student']);
 
@@ -170,7 +170,7 @@ class StudentGuardianController extends Controller
     {
         $guardian = User::find($guardianId);
 
-        if (is_null($guardian) || !$guardian->hasRole('guardian')) {
+        if (is_null($guardian) || ! $guardian->hasRole('guardian')) {
             return $this->sendError('Representante no encontrado');
         }
 
@@ -191,7 +191,7 @@ class StudentGuardianController extends Controller
     {
         $student = User::find($studentId);
 
-        if (is_null($student) || !$student->hasRole('student')) {
+        if (is_null($student) || ! $student->hasRole('student')) {
             return $this->sendError('Estudiante no encontrado');
         }
 
@@ -213,7 +213,7 @@ class StudentGuardianController extends Controller
             ->where('status', true)
             ->exists();
 
-        if (!$hasAccess && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (! $hasAccess && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError('No tienes acceso a la información de este estudiante', [], 403);
         }
 
@@ -230,7 +230,7 @@ class StudentGuardianController extends Controller
                 $q->with(['task.subjectAssignment.subject'])
                     ->orderBy('submitted_at', 'desc')
                     ->limit(10);
-            }
+            },
         ])->find($studentId);
 
         if (is_null($student)) {

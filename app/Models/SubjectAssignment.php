@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SubjectAssignment extends Model
 {
@@ -64,9 +64,10 @@ class SubjectAssignment extends Model
      */
     public function students()
     {
-        if (!$this->section) {
+        if (! $this->section) {
             return collect();
         }
+
         return $this->section->students();
     }
 }

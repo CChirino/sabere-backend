@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\SendNotificationJob;
+use App\Models\Event;
 use App\Models\Notification;
 use App\Models\Reenrollment;
 use App\Models\StudentScore;
@@ -21,7 +22,9 @@ class NotificationService
         $teacher = $score->gradedBy;
         $term = $score->term;
 
-        if (!$student) return;
+        if (! $student) {
+            return;
+        }
 
         // Notificar al estudiante
         self::createNotification(
@@ -76,7 +79,9 @@ class NotificationService
 
         foreach ($scores as $score) {
             $student = $score->student;
-            if (!$student || in_array($student->id, $notifiedStudents)) continue;
+            if (! $student || in_array($student->id, $notifiedStudents)) {
+                continue;
+            }
 
             $notifiedStudents[] = $student->id;
 
@@ -119,24 +124,32 @@ class NotificationService
      */
     public static function notifyTaskCreated(Task $task): void
     {
-        if (!$task->is_published) return;
+        if (! $task->is_published) {
+            return;
+        }
 
         $subject = $task->subject;
         $teacher = $task->subjectAssignment?->teacher;
 
         // Obtener estudiantes de la asignación/sección
         $assignment = $task->subjectAssignment;
-        if (!$assignment) return;
+        if (! $assignment) {
+            return;
+        }
 
         $section = $assignment->section;
-        if (!$section) return;
+        if (! $section) {
+            return;
+        }
 
         // Obtener estudiantes inscritos en la sección
         $enrollments = $section->enrollments()->where('status', 'active')->with('student.guardians')->get();
 
         foreach ($enrollments as $enrollment) {
             $student = $enrollment->student;
-            if (!$student) continue;
+            if (! $student) {
+                continue;
+            }
 
             // Notificar al estudiante
             self::createNotification(
@@ -230,7 +243,9 @@ class NotificationService
         $grade = $reenrollment->targetGrade;
         $section = $reenrollment->targetSection;
 
-        if (!$student) return;
+        if (! $student) {
+            return;
+        }
 
         self::createNotification(
             user: $student,
@@ -274,7 +289,9 @@ class NotificationService
         $student = $reenrollment->student;
         $academicPeriod = $reenrollment->targetAcademicPeriod;
 
-        if (!$student) return;
+        if (! $student) {
+            return;
+        }
 
         self::createNotification(
             user: $student,
@@ -305,6 +322,149 @@ class NotificationService
                 ],
                 channel: 'both'
             );
+        }
+    }
+
+    /**
+     * Notificar sobre un evento próximo (1 día antes).
+     */
+    public static function notifyEventReminder(Event $event): void
+    {
+        if (! $event->send_notification || ! $event->status) {
+            return;
+        }
+
+        $typeLabel = Event::TYPE_LABELS[$event->type] ?? $event->type;
+        $startDate = $event->all_day
+            ? $event->start_date->format('d/m/Y')
+            : $event->start_date->format('d/m/Y h:i A');
+        $endDate = null;
+        if ($event->end_date) {
+            $endDate = $event->all_day
+                ? $event->end_date->format('d/m/Y')
+                : $event->end_date->format('d/m/Y h:i A');
+        }
+
+        $notificationData = [
+            'event_id' => $event->id,
+            'event_title' => $event->title,
+            'event_type' => $event->type,
+            'type_label' => $typeLabel,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'location' => $event->location,
+            'description' => $event->description,
+        ];
+
+        // Obtener usuarios según la visibilidad del evento
+        $visibility = $event->visibility;
+
+        if ($visibility === 'all') {
+            // Notificar a todos los estudiantes activos y sus representantes
+            $students = User::whereHas('roles', fn ($q) => $q->where('name', 'student'))
+                ->whereHas('enrollments', fn ($q) => $q->where('status', 'active'))
+                ->get();
+
+            foreach ($students as $student) {
+                self::createNotification(
+                    user: $student,
+                    type: 'event_reminder',
+                    title: "Evento próximo: {$event->title}",
+                    message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                    data: $notificationData,
+                    channel: 'both'
+                );
+
+                foreach ($student->guardians as $guardian) {
+                    self::createNotification(
+                        user: $guardian,
+                        type: 'event_reminder',
+                        title: "Evento próximo: {$event->title}",
+                        message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                        data: $notificationData,
+                        channel: 'both'
+                    );
+                }
+            }
+
+            // Notificar a profesores
+            $teachers = User::whereHas('roles', fn ($q) => $q->where('name', 'teacher'))->get();
+            foreach ($teachers as $teacher) {
+                self::createNotification(
+                    user: $teacher,
+                    type: 'event_reminder',
+                    title: "Evento próximo: {$event->title}",
+                    message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                    data: $notificationData,
+                    channel: 'both'
+                );
+            }
+
+            // Notificar a staff (admin, director, coordinator)
+            $staff = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'director', 'coordinator']))->get();
+            foreach ($staff as $member) {
+                self::createNotification(
+                    user: $member,
+                    type: 'event_reminder',
+                    title: "Evento próximo: {$event->title}",
+                    message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                    data: $notificationData,
+                    channel: 'both'
+                );
+            }
+        } elseif ($visibility === 'students') {
+            // Notificar solo a estudiantes activos y sus representantes
+            $students = User::whereHas('roles', fn ($q) => $q->where('name', 'student'))
+                ->whereHas('enrollments', fn ($q) => $q->where('status', 'active'))
+                ->get();
+
+            foreach ($students as $student) {
+                self::createNotification(
+                    user: $student,
+                    type: 'event_reminder',
+                    title: "Evento próximo: {$event->title}",
+                    message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                    data: $notificationData,
+                    channel: 'both'
+                );
+
+                foreach ($student->guardians as $guardian) {
+                    self::createNotification(
+                        user: $guardian,
+                        type: 'event_reminder',
+                        title: "Evento próximo: {$event->title}",
+                        message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                        data: $notificationData,
+                        channel: 'both'
+                    );
+                }
+            }
+        } elseif ($visibility === 'teachers') {
+            // Notificar a profesores y staff
+            $users = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['teacher', 'admin', 'director', 'coordinator']))->get();
+            foreach ($users as $user) {
+                self::createNotification(
+                    user: $user,
+                    type: 'event_reminder',
+                    title: "Evento próximo: {$event->title}",
+                    message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                    data: $notificationData,
+                    channel: 'both'
+                );
+            }
+        } elseif ($visibility === 'staff') {
+            // Notificar solo a staff (admin, director, coordinator)
+            $users = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'director', 'coordinator']))->get();
+            foreach ($users as $user) {
+                self::createNotification(
+                    user: $user,
+                    type: 'event_reminder',
+                    title: "Evento próximo: {$event->title}",
+                    message: "Mañana se realizará el evento {$event->title} ({$typeLabel})",
+                    data: $notificationData,
+                    channel: 'both'
+                );
+            }
         }
     }
 

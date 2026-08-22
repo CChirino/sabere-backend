@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Web\Student;
 
-use App\Http\Controllers\Controller;
 use App\Events\NewChatMessage;
-use App\Models\Section;
+use App\Http\Controllers\Controller;
 use App\Models\SectionChatMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,25 +17,28 @@ class SectionChatController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Obtener la inscripción activa del estudiante
         $enrollment = $user->enrollments()
             ->where('status', 'active')
             ->with(['section.grade', 'section.academicPeriod'])
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return redirect()->route('dashboard')
                 ->with('error', 'No tienes una inscripción activa.');
         }
 
         $section = $enrollment->section;
 
-        // Obtener los mensajes del chat con paginación
+        // HIGH-06: Limitar mensajes para evitar cargas masivas
         $messages = SectionChatMessage::where('section_id', $section->id)
-            ->with('user:id,name,email')
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->reverse()
+            ->values();
 
         // Obtener los estudiantes de la sección
         $students = $section->students()
@@ -60,7 +62,7 @@ class SectionChatController extends Controller
                 'grade' => $section->grade->name,
                 'academic_period' => $section->academicPeriod->name,
             ],
-            'messages' => $messages->map(fn($msg) => [
+            'messages' => $messages->map(fn ($msg) => [
                 'id' => $msg->id,
                 'message' => $msg->message,
                 'type' => $msg->type,
@@ -97,7 +99,7 @@ class SectionChatController extends Controller
             ->where('status', 'active')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return back()->with('error', 'No tienes una inscripción activa.');
         }
 

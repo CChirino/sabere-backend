@@ -13,16 +13,16 @@ class Controller extends BaseController
     /**
      * Success response method.
      *
-     * @param mixed $result
-     * @param string $message
-     * @param int $code
+     * @param  mixed  $result
+     * @param  string  $message
+     * @param  int  $code
      * @return \Illuminate\Http\JsonResponse
      */
     public function sendResponse($result, $message, $code = 200)
     {
         $response = [
             'success' => true,
-            'data'    => $result,
+            'data' => $result,
             'message' => $message,
         ];
 
@@ -32,9 +32,9 @@ class Controller extends BaseController
     /**
      * Return error response.
      *
-     * @param string $error
-     * @param array $errorMessages
-     * @param int $code
+     * @param  string  $error
+     * @param  array  $errorMessages
+     * @param  int  $code
      * @return \Illuminate\Http\JsonResponse
      */
     public function sendError($error, $errorMessages = [], $code = 404)
@@ -44,7 +44,7 @@ class Controller extends BaseController
             'message' => $error,
         ];
 
-        if (!empty($errorMessages)) {
+        if (! empty($errorMessages)) {
             $response['data'] = $errorMessages;
         }
 

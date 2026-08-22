@@ -12,20 +12,16 @@ class EducationLevelController extends Controller
 {
     /**
      * Listar todos los niveles educativos
-     *
-     * @return JsonResponse
      */
     public function index(): JsonResponse
     {
         $educationLevels = EducationLevel::all();
+
         return $this->sendResponse($educationLevels, 'Niveles educativos obtenidos exitosamente');
     }
 
     /**
      * Almacenar un nuevo nivel educativo
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
@@ -47,9 +43,6 @@ class EducationLevelController extends Controller
 
     /**
      * Mostrar un nivel educativo específico
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(int $id): JsonResponse
     {
@@ -64,10 +57,6 @@ class EducationLevelController extends Controller
 
     /**
      * Actualizar un nivel educativo
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function update(Request $request, int $id): JsonResponse
     {
@@ -77,10 +66,9 @@ class EducationLevelController extends Controller
             return $this->sendError('Nivel educativo no encontrado');
         }
 
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:10|unique:education_levels,code,' . $id,
+            'code' => 'required|string|max:10|unique:education_levels,code,'.$id,
             'description' => 'nullable|string',
             'status' => 'boolean',
         ]);
@@ -89,7 +77,6 @@ class EducationLevelController extends Controller
             return $this->sendError('Error de validación', $validator->errors(), 422);
         }
 
-
         $educationLevel->update($request->only(['name', 'code', 'description', 'status']));
 
         return $this->sendResponse($educationLevel, 'Nivel educativo actualizado exitosamente');
@@ -97,9 +84,6 @@ class EducationLevelController extends Controller
 
     /**
      * Eliminar un nivel educativo
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function destroy(int $id): JsonResponse
     {

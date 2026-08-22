@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Schedule extends Model
 {
@@ -83,6 +83,7 @@ class Schedule extends Model
     {
         $start = \Carbon\Carbon::parse($this->start_time)->format('h:i A');
         $end = \Carbon\Carbon::parse($this->end_time)->format('h:i A');
+
         return "{$start} - {$end}";
     }
 
@@ -93,6 +94,7 @@ class Schedule extends Model
     {
         $start = \Carbon\Carbon::parse($this->start_time);
         $end = \Carbon\Carbon::parse($this->end_time);
+
         return $start->diffInMinutes($end);
     }
 
@@ -107,7 +109,9 @@ class Schedule extends Model
         ?int $excludeId = null
     ): bool {
         $assignment = SubjectAssignment::find($subjectAssignmentId);
-        if (!$assignment) return false;
+        if (! $assignment) {
+            return false;
+        }
 
         // Normalizar formato de tiempo a H:i:s
         $startTime = self::normalizeTime($startTime);
@@ -116,7 +120,7 @@ class Schedule extends Model
         // Verificar conflicto en la misma sección
         $query = self::whereHas('subjectAssignment', function ($q) use ($assignment) {
             $q->where('section_id', $assignment->section_id)
-              ->where('academic_period_id', $assignment->academic_period_id);
+                ->where('academic_period_id', $assignment->academic_period_id);
         })
             ->where('day_of_week', $dayOfWeek)
             ->where('status', true)
@@ -126,7 +130,7 @@ class Schedule extends Model
                 // - El fin del nuevo está dentro de uno existente
                 // - El nuevo contiene completamente a uno existente
                 $q->whereRaw('TIME(start_time) < TIME(?)', [$endTime])
-                  ->whereRaw('TIME(end_time) > TIME(?)', [$startTime]);
+                    ->whereRaw('TIME(end_time) > TIME(?)', [$startTime]);
             });
 
         if ($excludeId) {
@@ -147,8 +151,9 @@ class Schedule extends Model
         }
         // Si solo tiene H:i, agregar :00
         if (preg_match('/^\d{2}:\d{2}$/', $time)) {
-            return $time . ':00';
+            return $time.':00';
         }
+
         return $time;
     }
 
@@ -169,13 +174,13 @@ class Schedule extends Model
 
         $query = self::whereHas('subjectAssignment', function ($q) use ($teacherId, $academicPeriodId) {
             $q->where('teacher_id', $teacherId)
-              ->where('academic_period_id', $academicPeriodId);
+                ->where('academic_period_id', $academicPeriodId);
         })
             ->where('day_of_week', $dayOfWeek)
             ->where('status', true)
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->whereRaw('TIME(start_time) < TIME(?)', [$endTime])
-                  ->whereRaw('TIME(end_time) > TIME(?)', [$startTime]);
+                    ->whereRaw('TIME(end_time) > TIME(?)', [$startTime]);
             });
 
         if ($excludeId) {

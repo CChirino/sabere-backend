@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TaskSubmission extends Model
 {
@@ -50,7 +50,7 @@ class TaskSubmission extends Model
      */
     public function isLate(): bool
     {
-        if (!$this->submitted_at || !$this->task->due_date) {
+        if (! $this->submitted_at || ! $this->task->due_date) {
             return false;
         }
 

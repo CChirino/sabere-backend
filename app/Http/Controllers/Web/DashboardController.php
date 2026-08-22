@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\AcademicPeriod;
 use App\Models\Enrollment;
+use App\Models\Event;
 use App\Models\Section;
+use App\Models\StudentScore;
 use App\Models\SubjectAssignment;
 use App\Models\Task;
 use App\Models\TaskSubmission;
-use App\Models\StudentScore;
-use App\Models\AcademicPeriod;
 use App\Models\Term;
-use App\Models\Event;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -177,7 +177,7 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return [
                 'message' => 'No tienes una inscripción activa',
                 'enrollment' => null,
@@ -242,7 +242,7 @@ class DashboardController extends Controller
         $studentsData = $students->map(function ($student) {
             $enrollment = $student->enrollments->first();
 
-            if (!$enrollment) {
+            if (! $enrollment) {
                 return [
                     'student' => $student,
                     'enrollment' => null,

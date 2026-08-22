@@ -31,33 +31,33 @@ class DemoSeeder extends Seeder
 
         // 1. Crear período académico activo
         $period = $this->createAcademicPeriod();
-        
+
         // 2. Crear usuarios adicionales (profesores, estudiantes, representantes)
         $teachers = $this->createTeachers();
         $students = $this->createStudents();
         $guardians = $this->createGuardians($students);
-        
+
         // 3. Crear secciones
         $sections = $this->createSections($period);
-        
+
         // 4. Inscribir estudiantes en secciones
         $this->enrollStudents($students, $sections, $period);
-        
+
         // 5. Crear asignaciones profesor-materia-sección
         $assignments = $this->createSubjectAssignments($teachers, $sections, $period);
-        
+
         // 6. Crear horarios
         $this->createSchedules($assignments);
-        
+
         // 7. Crear tareas
         $tasks = $this->createTasks($assignments, $period);
-        
+
         // 8. Crear entregas de tareas
         $this->createTaskSubmissions($tasks, $sections);
-        
+
         // 9. Crear calificaciones
         $this->createScores($assignments, $sections, $period);
-        
+
         // 10. Crear registros de asistencia
         $this->createAttendance($sections, $assignments, $period);
 
@@ -142,7 +142,7 @@ class DemoSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            if (!$teacher->hasRole('teacher')) {
+            if (! $teacher->hasRole('teacher')) {
                 $teacher->assignRole('teacher');
             }
             $teachers[] = $teacher;
@@ -192,7 +192,7 @@ class DemoSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            if (!$student->hasRole('student')) {
+            if (! $student->hasRole('student')) {
                 $student->assignRole('student');
             }
             $students[] = $student;
@@ -230,7 +230,7 @@ class DemoSeeder extends Seeder
                     'email_verified_at' => now(),
                 ]
             );
-            if (!$guardian->hasRole('guardian')) {
+            if (! $guardian->hasRole('guardian')) {
                 $guardian->assignRole('guardian');
             }
 
@@ -247,7 +247,7 @@ class DemoSeeder extends Seeder
                             'is_primary' => $index === 0,
                             'can_pickup' => true,
                             'emergency_contact' => true,
-                            'phone' => '0414-' . rand(1000000, 9999999),
+                            'phone' => '0414-'.rand(1000000, 9999999),
                             'status' => true,
                         ]
                     );
@@ -305,12 +305,16 @@ class DemoSeeder extends Seeder
         ];
 
         foreach ($distribution as $sectionIndex => $studentIndices) {
-            if (!isset($sections[$sectionIndex])) continue;
-            
+            if (! isset($sections[$sectionIndex])) {
+                continue;
+            }
+
             $section = $sections[$sectionIndex];
             foreach ($studentIndices as $studentIndex) {
-                if (!isset($students[$studentIndex])) continue;
-                
+                if (! isset($students[$studentIndex])) {
+                    continue;
+                }
+
                 Enrollment::firstOrCreate(
                     [
                         'student_id' => $students[$studentIndex]->id,
@@ -337,7 +341,7 @@ class DemoSeeder extends Seeder
         foreach ($sections as $section) {
             foreach ($subjects->take(6) as $index => $subject) {
                 $teacher = $teachers[$index % count($teachers)];
-                
+
                 $assignment = SubjectAssignment::firstOrCreate(
                     [
                         'teacher_id' => $teacher->id,
@@ -376,7 +380,7 @@ class DemoSeeder extends Seeder
         $assignmentsBySection = [];
         foreach ($assignments as $assignment) {
             $sectionId = $assignment->section_id;
-            if (!isset($assignmentsBySection[$sectionId])) {
+            if (! isset($assignmentsBySection[$sectionId])) {
                 $assignmentsBySection[$sectionId] = [];
             }
             $assignmentsBySection[$sectionId][] = $assignment;
@@ -384,15 +388,15 @@ class DemoSeeder extends Seeder
 
         foreach ($assignmentsBySection as $sectionId => $sectionAssignments) {
             $slotIndex = 0;
-            
+
             foreach ($days as $dayIndex => $day) {
                 // 3-4 clases por día
                 $classesPerDay = rand(3, 4);
-                
+
                 for ($i = 0; $i < $classesPerDay && $slotIndex < count($sectionAssignments); $i++) {
                     $assignment = $sectionAssignments[$slotIndex % count($sectionAssignments)];
                     $timeSlot = $timeSlots[$i % count($timeSlots)];
-                    
+
                     Schedule::firstOrCreate(
                         [
                             'subject_assignment_id' => $assignment->id,
@@ -405,7 +409,7 @@ class DemoSeeder extends Seeder
                             'status' => true,
                         ]
                     );
-                    
+
                     $slotIndex++;
                 }
             }
@@ -430,18 +434,20 @@ class DemoSeeder extends Seeder
         foreach ($assignments as $assignment) {
             // Crear 2-3 tareas por asignación para el primer lapso
             $term = $terms->first();
-            if (!$term) continue;
+            if (! $term) {
+                continue;
+            }
 
             $numTasks = rand(2, 3);
             for ($i = 0; $i < $numTasks; $i++) {
                 $template = $taskTemplates[array_rand($taskTemplates)];
                 $dueDate = Carbon::parse($term->start_date)->addDays(rand(7, 60));
-                
+
                 $task = Task::firstOrCreate(
                     [
                         'subject_assignment_id' => $assignment->id,
                         'term_id' => $term->id,
-                        'title' => $template['title'] . ' - ' . $assignment->subject->name,
+                        'title' => $template['title'].' - '.$assignment->subject->name,
                     ],
                     [
                         'description' => $template['description'],
@@ -475,10 +481,10 @@ class DemoSeeder extends Seeder
                 // 70% de probabilidad de que el estudiante haya entregado
                 if (rand(1, 100) <= 70) {
                     $submittedAt = Carbon::parse($task->available_from)->addDays(rand(1, 14));
-                    
+
                     // 60% de probabilidad de estar calificado
                     $isGraded = rand(1, 100) <= 60;
-                    
+
                     TaskSubmission::firstOrCreate(
                         [
                             'task_id' => $task->id,
@@ -507,7 +513,9 @@ class DemoSeeder extends Seeder
         $terms = Term::where('academic_period_id', $period->id)->get();
         $firstTerm = $terms->first();
 
-        if (!$firstTerm) return;
+        if (! $firstTerm) {
+            return;
+        }
 
         foreach ($assignments as $assignment) {
             $section = $assignment->section;
@@ -555,16 +563,18 @@ class DemoSeeder extends Seeder
         foreach ($sections as $section) {
             $enrollments = Enrollment::where('section_id', $section->id)->get();
             $sectionAssignments = SubjectAssignment::where('section_id', $section->id)->get();
-            
-            if ($sectionAssignments->isEmpty()) continue;
-            
+
+            if ($sectionAssignments->isEmpty()) {
+                continue;
+            }
+
             $currentDate = $startDate->copy();
-            
+
             while ($currentDate <= $endDate) {
                 // Solo días de semana
                 if ($currentDate->isWeekday()) {
                     $assignment = $sectionAssignments->random();
-                    
+
                     foreach ($enrollments as $enrollment) {
                         Attendance::firstOrCreate(
                             [
@@ -582,7 +592,7 @@ class DemoSeeder extends Seeder
                         );
                     }
                 }
-                
+
                 $currentDate->addDay();
             }
         }

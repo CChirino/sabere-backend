@@ -64,7 +64,7 @@ class EnrollmentController extends Controller
 
         // Verificar que el usuario tenga rol de estudiante
         $student = User::find($request->student_id);
-        if (!$student->hasRole('student')) {
+        if (! $student->hasRole('student')) {
             return $this->sendError(
                 'El usuario seleccionado no tiene rol de estudiante',
                 [],
@@ -102,7 +102,7 @@ class EnrollmentController extends Controller
         }
 
         $enrollment = Enrollment::create($request->only([
-            'student_id', 'section_id', 'academic_period_id', 'enrollment_date', 'status', 'notes'
+            'student_id', 'section_id', 'academic_period_id', 'enrollment_date', 'status', 'notes',
         ]));
         $enrollment->load(['student', 'section.grade.educationLevel', 'academicPeriod']);
 

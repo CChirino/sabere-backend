@@ -17,19 +17,31 @@ class RegisteredUserController extends Controller
 {
     /**
      * Display the registration view.
+     * CRIT-03: Solo muestra el formulario si el registro público está habilitado.
      */
-    public function create(): Response
+    public function create(): Response|RedirectResponse
     {
+        if (! config('auth.allow_public_registration', false)) {
+            return redirect()->route('login')
+                ->with('error', 'El registro público no está disponible. Contacta al administrador del colegio.');
+        }
+
         return Inertia::render('Auth/Register');
     }
 
     /**
      * Handle an incoming registration request.
+     * CRIT-03: Bloquea el registro si ALLOW_PUBLIC_REGISTRATION=false.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
+        // CRIT-03: Verificar si el registro público está habilitado
+        if (! config('auth.allow_public_registration', false)) {
+            abort(403, 'El registro público no está disponible. Contacta al administrador del colegio.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,

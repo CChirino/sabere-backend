@@ -101,9 +101,10 @@ class SubjectSeeder extends Seeder
 
         foreach ($subjects as $subject) {
             $areaId = $areas[$subject['subject_area_code']] ?? null;
-            
-            if (!$areaId) {
+
+            if (! $areaId) {
                 $this->command->warn("Área {$subject['subject_area_code']} no encontrada para {$subject['name']}");
+
                 continue;
             }
 

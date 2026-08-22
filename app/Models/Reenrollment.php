@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Reenrollment extends Model
 {
@@ -147,7 +147,7 @@ class Reenrollment extends Model
             'academic_period_id' => $this->target_academic_period_id,
             'enrollment_date' => now(),
             'status' => 'active',
-            'notes' => 'Reinscripción aprobada. ' . ($this->admin_notes ?? ''),
+            'notes' => 'Reinscripción aprobada. '.($this->admin_notes ?? ''),
         ]);
     }
 }

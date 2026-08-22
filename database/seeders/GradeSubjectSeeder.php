@@ -16,17 +16,18 @@ class GradeSubjectSeeder extends Seeder
     public function run(): void
     {
         $schoolYear = '2024-2025';
-        
+
         $primaria = EducationLevel::where('code', 'PRIM')->first();
-        
-        if (!$primaria) {
+
+        if (! $primaria) {
             $this->command->error('Nivel educativo PRIM no encontrado.');
+
             return;
         }
 
         $grades = Grade::where('education_level_id', $primaria->id)
             ->pluck('id', 'numeric_equivalent');
-        
+
         $subjects = Subject::pluck('id', 'code');
 
         // Definición de materias por grado
@@ -104,17 +105,19 @@ class GradeSubjectSeeder extends Seeder
 
         foreach ($gradeSubjects as $gradeNumber => $subjectList) {
             $gradeId = $grades[$gradeNumber] ?? null;
-            
-            if (!$gradeId) {
+
+            if (! $gradeId) {
                 $this->command->warn("Grado {$gradeNumber} no encontrado.");
+
                 continue;
             }
 
             foreach ($subjectList as $subjectCode => $config) {
                 $subjectId = $subjects[$subjectCode] ?? null;
-                
-                if (!$subjectId) {
+
+                if (! $subjectId) {
                     $this->command->warn("Materia {$subjectCode} no encontrada para grado {$gradeNumber}.");
+
                     continue;
                 }
 
@@ -125,7 +128,7 @@ class GradeSubjectSeeder extends Seeder
                     ->where('school_year', $schoolYear)
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     DB::table('grade_subject')->insert([
                         'grade_id' => $gradeId,
                         'subject_id' => $subjectId,

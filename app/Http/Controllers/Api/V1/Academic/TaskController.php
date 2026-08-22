@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
-use App\Models\Task;
 use App\Models\SubjectAssignment;
-use App\Models\TaskSubmission;
+use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class TaskController extends Controller
 {
@@ -92,7 +91,7 @@ class TaskController extends Controller
 
         // Verificar que el usuario autenticado sea el profesor de la asignación
         $assignment = SubjectAssignment::find($request->subject_assignment_id);
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para crear tareas en esta asignación',
                 [],
@@ -102,7 +101,7 @@ class TaskController extends Controller
 
         $task = Task::create($request->only([
             'subject_assignment_id', 'term_id', 'title', 'description', 'instructions',
-            'type', 'max_score', 'weight', 'due_date', 'available_from', 'is_published', 'status'
+            'type', 'max_score', 'weight', 'due_date', 'available_from', 'is_published', 'status',
         ]));
         $task->load(['subjectAssignment.subject', 'subjectAssignment.section.grade', 'term']);
 
@@ -119,7 +118,7 @@ class TaskController extends Controller
             'subjectAssignment.section.grade.educationLevel',
             'subjectAssignment.teacher',
             'term',
-            'submissions.student'
+            'submissions.student',
         ])->find($id);
 
         if (is_null($task)) {
@@ -142,7 +141,7 @@ class TaskController extends Controller
 
         // Verificar permisos
         $assignment = $task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para editar esta tarea',
                 [],
@@ -169,7 +168,7 @@ class TaskController extends Controller
 
         $task->update($request->only([
             'title', 'description', 'instructions', 'type', 'max_score',
-            'weight', 'due_date', 'available_from', 'is_published', 'status'
+            'weight', 'due_date', 'available_from', 'is_published', 'status',
         ]));
         $task->load(['subjectAssignment.subject', 'subjectAssignment.section.grade', 'term']);
 
@@ -189,7 +188,7 @@ class TaskController extends Controller
 
         // Verificar permisos
         $assignment = $task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director'])) {
             return $this->sendError(
                 'No tienes permiso para eliminar esta tarea',
                 [],
@@ -224,7 +223,7 @@ class TaskController extends Controller
 
         // Verificar permisos
         $assignment = $task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para modificar esta tarea',
                 [],
@@ -232,7 +231,7 @@ class TaskController extends Controller
             );
         }
 
-        $task->update(['is_published' => !$task->is_published]);
+        $task->update(['is_published' => ! $task->is_published]);
 
         $message = $task->is_published ? 'Tarea publicada exitosamente' : 'Tarea despublicada exitosamente';
 
@@ -246,7 +245,7 @@ class TaskController extends Controller
     {
         $user = \App\Models\User::find($studentId);
 
-        if (is_null($user) || !$user->hasRole('student')) {
+        if (is_null($user) || ! $user->hasRole('student')) {
             return $this->sendError('Estudiante no encontrado');
         }
 
@@ -261,7 +260,7 @@ class TaskController extends Controller
         $tasks = Task::with(['subjectAssignment.subject', 'term'])
             ->whereHas('subjectAssignment', function ($q) use ($enrollment) {
                 $q->where('section_id', $enrollment->section_id)
-                  ->where('status', true);
+                    ->where('status', true);
             })
             ->where('status', true)
             ->orderBy('due_date', 'asc')

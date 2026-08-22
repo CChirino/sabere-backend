@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Term extends Model
 {
@@ -51,6 +51,7 @@ class Term extends Model
     public function isActive(): bool
     {
         $today = now()->toDateString();
+
         return $this->start_date <= $today && $this->end_date >= $today;
     }
 }

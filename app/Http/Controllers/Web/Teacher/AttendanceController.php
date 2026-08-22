@@ -4,19 +4,36 @@ namespace App\Http\Controllers\Web\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\SubjectAssignment;
-use App\Models\Section;
 use App\Models\Enrollment;
+use App\Models\Section;
+use App\Models\SubjectAssignment;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
     /**
      * Get attendance data for a specific section and date.
+     * HIGH-04: Verifica que el profesor tenga asignación en la sección.
      */
     public function getSectionAttendance(Request $request, Section $section)
     {
+        $user = auth()->user();
+
+        // HIGH-04: Solo admin/director/coordinator ven cualquier sección
+        // El profesor solo puede ver secciones donde tiene asignación activa
+        if (! $user->hasAnyRole(['admin', 'director', 'coordinator'])) {
+            $hasAssignment = $section->subjectAssignments()
+                ->where('teacher_id', $user->id)
+                ->where('status', true)
+                ->exists();
+
+            if (! $hasAssignment) {
+                return response()->json([
+                    'message' => 'No tienes acceso a esta sección.',
+                ], 403);
+            }
+        }
+
         $date = $request->get('date', now()->format('Y-m-d'));
         $subjectAssignmentId = $request->get('subject_assignment_id');
 
@@ -38,6 +55,7 @@ class AttendanceController extends Controller
 
         $students = $enrollments->map(function ($enrollment) use ($attendanceRecords) {
             $attendance = $attendanceRecords->get($enrollment->student_id);
+
             return [
                 'id' => $enrollment->student_id,
                 'name' => $enrollment->student->name,
@@ -56,6 +74,7 @@ class AttendanceController extends Controller
 
     /**
      * Store or update attendance records in bulk.
+     * HIGH-05: Valida que cada estudiante pertenezca a la sección.
      */
     public function store(Request $request)
     {
@@ -74,12 +93,25 @@ class AttendanceController extends Controller
         // Verify teacher has access to this section
         if ($validated['subject_assignment_id']) {
             $assignment = SubjectAssignment::find($validated['subject_assignment_id']);
-            if ($assignment->teacher_id !== auth()->id() && !auth()->user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+            if ($assignment->teacher_id !== auth()->id() && ! auth()->user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
                 return back()->withErrors(['error' => 'No tienes permiso para registrar asistencia en esta materia.']);
             }
         }
 
+        // HIGH-05: Obtener los IDs de estudiantes inscritos en la sección
+        $enrolledStudentIds = Enrollment::where('section_id', $validated['section_id'])
+            ->where('status', 'active')
+            ->pluck('student_id')
+            ->toArray();
+
         foreach ($validated['attendances'] as $attendanceData) {
+            // HIGH-05: Verificar que el estudiante pertenece a la sección
+            if (! in_array($attendanceData['student_id'], $enrolledStudentIds)) {
+                return back()->withErrors([
+                    'error' => "El estudiante ID {$attendanceData['student_id']} no está inscrito en esta sección.",
+                ]);
+            }
+
             Attendance::updateOrCreate(
                 [
                     'student_id' => $attendanceData['student_id'],
@@ -108,7 +140,7 @@ class AttendanceController extends Controller
         $academicPeriodId = $request->get('academic_period_id');
         $subjectAssignmentId = $request->get('subject_assignment_id');
 
-        if (!$sectionId || !$academicPeriodId) {
+        if (! $sectionId || ! $academicPeriodId) {
             return response()->json(['error' => 'Se requiere section_id y academic_period_id'], 400);
         }
 
@@ -152,7 +184,7 @@ class AttendanceController extends Controller
         });
 
         // Count students at risk (below 75%)
-        $atRiskCount = $report->filter(fn($r) => !$r['meets_requirement'])->count();
+        $atRiskCount = $report->filter(fn ($r) => ! $r['meets_requirement'])->count();
 
         return response()->json([
             'report' => $report,

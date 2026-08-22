@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reenrollment;
 use App\Models\AcademicPeriod;
+use App\Models\Reenrollment;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,7 +22,7 @@ class ReenrollmentController extends Controller
             'targetAcademicPeriod',
             'targetGrade',
             'targetSection',
-            'processedBy'
+            'processedBy',
         ])->orderByDesc('created_at');
 
         // Filter by status
@@ -54,7 +54,7 @@ class ReenrollmentController extends Controller
             'admin_notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if (!$reenrollment->isPending()) {
+        if (! $reenrollment->isPending()) {
             return back()->with('error', 'Esta solicitud ya ha sido procesada.');
         }
 
@@ -78,7 +78,7 @@ class ReenrollmentController extends Controller
             'admin_notes' => ['required', 'string', 'max:1000'],
         ]);
 
-        if (!$reenrollment->isPending()) {
+        if (! $reenrollment->isPending()) {
             return back()->with('error', 'Esta solicitud ya ha sido procesada.');
         }
 

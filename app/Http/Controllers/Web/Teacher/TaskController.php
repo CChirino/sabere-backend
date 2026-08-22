@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Web\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Models\Task;
 use App\Models\SubjectAssignment;
+use App\Models\Task;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
@@ -73,7 +73,7 @@ class TaskController extends Controller
         $task->update($validated);
 
         // Send notifications if task was not published before and now is published
-        if (($validated['is_published'] ?? false) && !$task->is_published) {
+        if (($validated['is_published'] ?? false) && ! $task->is_published) {
             NotificationService::notifyTaskCreated($task->fresh());
         }
 
@@ -90,7 +90,7 @@ class TaskController extends Controller
             return back()->withErrors(['error' => 'No tienes permiso para modificar esta tarea.']);
         }
 
-        $task->update(['is_published' => !$task->is_published]);
+        $task->update(['is_published' => ! $task->is_published]);
 
         // Send notifications if task is now published
         if ($task->is_published) {
@@ -98,6 +98,7 @@ class TaskController extends Controller
         }
 
         $message = $task->is_published ? 'Tarea publicada correctamente.' : 'Tarea despublicada correctamente.';
+
         return back()->with('success', $message);
     }
 

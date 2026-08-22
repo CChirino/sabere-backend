@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -22,6 +21,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::with('roles')->get();
+
         return response()->json($users);
     }
 
@@ -32,7 +32,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'roles' => 'required|array',
-            'roles.*' => 'exists:roles,name'
+            'roles.*' => 'exists:roles,name',
         ]);
 
         if ($validator->fails()) {
@@ -59,10 +59,10 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'sometimes|string|email|max:255|unique:users,email,'.$user->id,
             'password' => 'sometimes|string|min:8|confirmed|nullable',
             'roles' => 'sometimes|array',
-            'roles.*' => 'exists:roles,name'
+            'roles.*' => 'exists:roles,name',
         ]);
 
         if ($validator->fails()) {
@@ -89,11 +89,12 @@ class UserController extends Controller
         // Prevenir eliminación de usuarios con roles críticos
         if ($user->hasAnyRole(['super_admin', 'admin'])) {
             return response()->json([
-                'message' => 'No se puede eliminar un usuario con rol de administrador'
+                'message' => 'No se puede eliminar un usuario con rol de administrador',
             ], 403);
         }
 
         $user->delete();
+
         return response()->json(null, 204);
     }
 }

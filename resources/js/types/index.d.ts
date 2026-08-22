@@ -7,6 +7,15 @@ export interface User {
     email: string;
     email_verified_at?: string;
     roles?: { name: Role }[];
+    cedula?: string;
+    phone?: string;
+    birth_date?: string;
+    avatar?: string;
+    avatar_url?: string;
+    bio?: string;
+    address?: string;
+    emergency_contact_name?: string;
+    emergency_contact_phone?: string;
 }
 
 // Entidades académicas
@@ -113,6 +122,7 @@ export interface Task {
     subject_assignment?: SubjectAssignment;
     term?: Term;
     submission_status?: string;
+    submissions?: TaskSubmission[];
 }
 
 export interface TaskSubmission {
@@ -144,6 +154,9 @@ export interface StudentScore {
     student?: User;
     subject_assignment?: SubjectAssignment;
     term?: Term;
+    title?: string;
+    max_score?: number;
+    type?: string;
 }
 
 export interface Schedule {
@@ -223,3 +236,87 @@ export type PageProps<
         error?: string;
     };
 };
+
+// Cronogramas
+export interface TeacherSyllabus {
+    id: number;
+    title: string;
+    description?: string;
+    content_type: 'file' | 'editor' | 'both';
+    file_path?: string;
+    file_name?: string;
+    file_size?: number;
+    content?: string;
+    objectives?: string[];
+    topics?: { week: string; topic: string; description?: string }[];
+    evaluation_criteria?: string[];
+    resources?: string[];
+    is_published: boolean;
+    published_at?: string;
+    subject_assignment_id: number;
+    term_id?: number;
+    created_by: number;
+    created_at: string;
+    updated_at: string;
+}
+
+// Circulares
+export interface Circular {
+    id: number;
+    title: string;
+    content: string;
+    priority: 'low' | 'normal' | 'high' | 'urgent';
+    audience: 'all' | 'teachers' | 'students' | 'guardians' | 'staff';
+    academic_period_id?: number;
+    send_email: boolean;
+    send_push: boolean;
+    scheduled_at?: string;
+    sent_at?: string;
+    created_by: number;
+    creator?: User;
+    created_at: string;
+    updated_at: string;
+}
+
+// Ayuda
+export interface HelpCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    icon?: string;
+    sort_order: number;
+    is_active: boolean;
+    articles?: HelpArticle[];
+    articles_count?: number;
+}
+
+export interface HelpArticle {
+    id: number;
+    category_id: number;
+    title: string;
+    slug: string;
+    content: string;
+    role_target?: string;
+    sort_order: number;
+    views_count: number;
+    is_active: boolean;
+    category?: HelpCategory;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface HelpSuggestion {
+    id: number;
+    user_id: number;
+    type: 'article' | 'question';
+    subject: string;
+    description: string;
+    status: 'pending' | 'reviewed' | 'implemented' | 'rejected';
+    admin_response?: string;
+    reviewed_by?: number;
+    reviewed_at?: string;
+    user?: User;
+    reviewer?: User;
+    created_at: string;
+}

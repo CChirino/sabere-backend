@@ -17,6 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ['prefix' => 'api', 'middleware' => ['web', 'auth']],
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // MED-01: Habilitar TrustHosts para prevenir Host Header Injection
+        $middleware->trustHosts(at: fn () => [
+            (new \App\Http\Middleware\TrustHosts(app()))->hosts(),
+        ]);
+
+        // MED-02: Agregar headers de seguridad HTTP a todas las respuestas
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,

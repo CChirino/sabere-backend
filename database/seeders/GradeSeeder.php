@@ -15,8 +15,9 @@ class GradeSeeder extends Seeder
     {
         $primaria = EducationLevel::where('code', 'PRIM')->first();
 
-        if (!$primaria) {
+        if (! $primaria) {
             $this->command->error('Nivel educativo PRIM no encontrado. Ejecuta EducationLevelSeeder primero.');
+
             return;
         }
 

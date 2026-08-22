@@ -11,11 +11,8 @@ class RegisterController extends Controller
 {
     /**
      * Create a new user instance after a valid registration.
-     *
-     * @param  array  $data
-     * @return \App\Models\User
      */
-    protected function create(array $data)
+    protected function create(array $data): User
     {
         return User::create([
             'name' => $data['name'],
@@ -26,15 +23,24 @@ class RegisterController extends Controller
 
     /**
      * Handle a registration request for the application.
+     * CRIT-03: El registro API también respeta ALLOW_PUBLIC_REGISTRATION.
      *
-     * @param  \App\Http\Requests\Auth\RegisterRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(RegisterRequest $request)
     {
+        // CRIT-03: Bloquear registro público si no está habilitado
+        if (! config('auth.allow_public_registration', false)) {
+            return $this->sendError(
+                'El registro público no está disponible. Contacta al administrador del colegio.',
+                [],
+                403
+            );
+        }
+
         $user = $this->create($request->validated());
         $user->assignRole('student');
-        
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return $this->sendResponse(
@@ -43,7 +49,7 @@ class RegisterController extends Controller
                 'token' => $token,
                 'token_type' => 'Bearer',
             ],
-            'User registered successfully',
+            'Registro exitoso',
             201
         );
     }

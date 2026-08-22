@@ -3,20 +3,15 @@
 namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
-use App\Models\Grade;
 use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class SubjectController extends Controller
 {
     /**
      * Listar todas las materias
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -28,15 +23,12 @@ class SubjectController extends Controller
         }
 
         $subjects = $query->get();
-        
+
         return $this->sendResponse($subjects, 'Materias obtenidas exitosamente');
     }
 
     /**
      * Almacenar una nueva materia
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
@@ -60,9 +52,6 @@ class SubjectController extends Controller
 
     /**
      * Mostrar una materia específica
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(int $id): JsonResponse
     {
@@ -77,10 +66,6 @@ class SubjectController extends Controller
 
     /**
      * Actualizar una materia
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function update(Request $request, int $id): JsonResponse
     {
@@ -93,7 +78,7 @@ class SubjectController extends Controller
         $validator = Validator::make($request->all(), [
             'subject_area_id' => 'required|exists:subject_areas,id',
             'name' => 'required|string|max:100',
-            'code' => 'required|string|max:20|unique:subjects,code,' . $id,
+            'code' => 'required|string|max:20|unique:subjects,code,'.$id,
             'description' => 'nullable|string',
             'status' => 'boolean',
         ]);
@@ -110,9 +95,6 @@ class SubjectController extends Controller
 
     /**
      * Eliminar una materia
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function destroy(int $id): JsonResponse
     {
@@ -138,10 +120,6 @@ class SubjectController extends Controller
 
     /**
      * Asignar una materia a un grado
-     *
-     * @param Request $request
-     * @param int $subjectId
-     * @return JsonResponse
      */
     public function assignToGrade(Request $request, int $subjectId): JsonResponse
     {
@@ -193,11 +171,6 @@ class SubjectController extends Controller
 
     /**
      * Desasignar una materia de un grado
-     *
-     * @param int $subjectId
-     * @param int $gradeId
-     * @param string $schoolYear
-     * @return JsonResponse
      */
     public function removeFromGrade(int $subjectId, int $gradeId, string $schoolYear): JsonResponse
     {
@@ -213,7 +186,7 @@ class SubjectController extends Controller
             ->where('school_year', $schoolYear)
             ->exists();
 
-        if (!$exists) {
+        if (! $exists) {
             return $this->sendError(
                 'La materia no está asignada a este grado para el año escolar especificado',
                 [],
@@ -234,9 +207,6 @@ class SubjectController extends Controller
 
     /**
      * Obtener los grados a los que está asignada una materia
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function grades(int $id): JsonResponse
     {

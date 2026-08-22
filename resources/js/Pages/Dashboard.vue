@@ -315,10 +315,10 @@ const formatEventDate = (dateString: string) => {
                                     <p class="text-sm text-gray-500">{{ score.subject_assignment?.subject?.name }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <span :class="['text-lg font-bold', (score.score / score.max_score) >= 0.5 ? 'text-green-600' : 'text-red-600']">
-                                        {{ score.score }} / {{ score.max_score }}
+                                    <span :class="['text-lg font-bold', (score.score / (score.max_score || 20)) >= 0.5 ? 'text-green-600' : 'text-red-600']">
+                                        {{ score.score }} / {{ score.max_score || 20 }}
                                     </span>
-                                    <Badge color="blue" class="ml-2">{{ getTaskTypeLabel(score.type) }}</Badge>
+                                    <Badge color="blue" class="ml-2">{{ getTaskTypeLabel(score.type || '') }}</Badge>
                                 </div>
                             </div>
                         </div>
@@ -382,9 +382,9 @@ const formatEventDate = (dateString: string) => {
                                 <p v-else class="text-sm text-red-500">Sin inscripción activa</p>
                             </div>
                             <div class="text-right">
-                                <div v-if="item.current_average !== null" class="mb-2">
+                                <div v-if="item.current_average != null" class="mb-2">
                                     <span class="text-sm text-gray-500">Promedio:</span>
-                                    <Badge :color="getScoreColor(item.current_average)" class="ml-2">
+                                    <Badge :color="getScoreColor(item.current_average!)" class="ml-2">
                                         {{ item.current_average }}
                                     </Badge>
                                 </div>

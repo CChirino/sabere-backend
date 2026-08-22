@@ -8,14 +8,16 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
 use Spatie\Permission\Models\Role;
 
 class UsersImport implements ToCollection, WithHeadingRow
 {
     protected array $errors = [];
+
     protected int $imported = 0;
+
     protected int $skipped = 0;
+
     protected array $validRoles;
 
     public function __construct()
@@ -25,6 +27,15 @@ class UsersImport implements ToCollection, WithHeadingRow
 
     public function collection(Collection $rows)
     {
+        // HIGH-07: Limitar la cantidad de usuarios por importación para evitar timeouts
+        $maxRows = 500;
+        if ($rows->count() > $maxRows) {
+            $this->errors[] = "El archivo contiene {$rows->count()} filas. El máximo permitido es {$maxRows} usuarios por importación. Divide el archivo en partes más pequeñas.";
+            $this->skipped = $rows->count();
+
+            return;
+        }
+
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2; // +2 porque la fila 1 es el encabezado
 
@@ -46,6 +57,7 @@ class UsersImport implements ToCollection, WithHeadingRow
             if ($validator->fails()) {
                 $this->errors = array_merge($this->errors, $validator->errors()->all());
                 $this->skipped++;
+
                 continue;
             }
 
@@ -53,16 +65,18 @@ class UsersImport implements ToCollection, WithHeadingRow
             if (User::where('email', $row['email'])->exists()) {
                 $this->errors[] = "Fila {$rowNumber}: El email {$row['email']} ya está registrado";
                 $this->skipped++;
+
                 continue;
             }
 
             // Procesar roles (separados por coma)
             $roles = array_map('trim', explode(',', $row['roles']));
-            $validUserRoles = array_filter($roles, fn($role) => in_array($role, $this->validRoles));
+            $validUserRoles = array_filter($roles, fn ($role) => in_array($role, $this->validRoles));
 
             if (empty($validUserRoles)) {
-                $this->errors[] = "Fila {$rowNumber}: Ningún rol válido especificado. Roles válidos: " . implode(', ', $this->validRoles);
+                $this->errors[] = "Fila {$rowNumber}: Ningún rol válido especificado. Roles válidos: ".implode(', ', $this->validRoles);
                 $this->skipped++;
+
                 continue;
             }
 
@@ -77,7 +91,7 @@ class UsersImport implements ToCollection, WithHeadingRow
                 $user->syncRoles($validUserRoles);
                 $this->imported++;
             } catch (\Exception $e) {
-                $this->errors[] = "Fila {$rowNumber}: Error al crear usuario - " . $e->getMessage();
+                $this->errors[] = "Fila {$rowNumber}: Error al crear usuario - ".$e->getMessage();
                 $this->skipped++;
             }
         }

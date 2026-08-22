@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Task;
-use App\Models\SubjectAssignment;
 use App\Models\StudentScore;
-use App\Models\Section;
+use App\Models\SubjectAssignment;
+use App\Models\Task;
 use App\Models\Term;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -45,6 +44,7 @@ class CoordinatorController extends Controller
             $subjects = $teacher->subjectAssignments->pluck('subject.name')->filter()->unique()->values()->toArray();
             $teacher->subjects = $subjects;
             unset($teacher->subjectAssignments);
+
             return $teacher;
         });
 
@@ -83,7 +83,7 @@ class CoordinatorController extends Controller
             }])
             ->first();
 
-        if (!$teacher) {
+        if (! $teacher) {
             return response()->json([
                 'success' => false,
                 'message' => 'Profesor no encontrado',
@@ -98,7 +98,7 @@ class CoordinatorController extends Controller
         foreach ($teacher->subjectAssignments as $assignment) {
             $totalTasks += $assignment->tasks_count;
             $totalStudents += $assignment->students_count;
-            
+
             // Contar entregas pendientes
             $pending = $assignment->tasks()
                 ->whereHas('submissions', function ($q) {
@@ -135,15 +135,15 @@ class CoordinatorController extends Controller
             'subjectAssignment.subject:id,name',
             'subjectAssignment.section:id,name',
         ])
-        ->withCount([
-            'submissions',
-            'submissions as pending_count' => function ($q) {
-                $q->where('status', 'submitted');
-            },
-            'submissions as graded_count' => function ($q) {
-                $q->where('status', 'graded');
-            },
-        ]);
+            ->withCount([
+                'submissions',
+                'submissions as pending_count' => function ($q) {
+                    $q->where('status', 'submitted');
+                },
+                'submissions as graded_count' => function ($q) {
+                    $q->where('status', 'graded');
+                },
+            ]);
 
         // Filtros
         if ($request->filter === 'pending') {
@@ -208,15 +208,15 @@ class CoordinatorController extends Controller
     public function scoresOverview(Request $request): JsonResponse
     {
         $termId = $request->get('term_id');
-        
+
         // Si no se especifica término, usar el primero disponible
-        if (!$termId) {
+        if (! $termId) {
             $term = Term::whereHas('academicPeriod', function ($q) {
                 $q->where('status', 'active');
             })->first();
-            
+
             // Si no hay término activo, buscar cualquier término
-            if (!$term) {
+            if (! $term) {
                 $term = Term::first();
             }
             $termId = $term?->id;

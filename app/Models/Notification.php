@@ -37,7 +37,7 @@ class Notification extends Model
      */
     public function markAsRead(): void
     {
-        if (!$this->read_at) {
+        if (! $this->read_at) {
             $this->update(['read_at' => now()]);
         }
     }
@@ -47,7 +47,7 @@ class Notification extends Model
      */
     public function markAsSent(): void
     {
-        if (!$this->sent_at) {
+        if (! $this->sent_at) {
             $this->update(['sent_at' => now()]);
         }
     }

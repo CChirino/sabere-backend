@@ -34,7 +34,7 @@ class RegisterRequest extends FormRequest
                     ->letters()
                     ->mixedCase()
                     ->numbers()
-                    ->symbols()
+                    ->symbols(),
             ],
         ];
     }

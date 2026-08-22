@@ -19,7 +19,7 @@ const task = ref<Task | null>(null);
 const submissions = ref<TaskSubmission[]>([]);
 const loading = ref(true);
 const gradingSubmission = ref<TaskSubmission | null>(null);
-const gradeValue = ref<number | null>(null);
+const gradeValue = ref<number | ''>('');
 const feedback = ref('');
 const saving = ref(false);
 
@@ -89,18 +89,18 @@ const getStatusLabel = (status: string) => {
 
 const openGrading = (submission: TaskSubmission) => {
     gradingSubmission.value = submission;
-    gradeValue.value = submission.score || null;
+    gradeValue.value = submission.score ?? '';
     feedback.value = submission.feedback || '';
 };
 
 const closeGrading = () => {
     gradingSubmission.value = null;
-    gradeValue.value = null;
+    gradeValue.value = '';
     feedback.value = '';
 };
 
 const submitGrade = async () => {
-    if (!gradingSubmission.value || gradeValue.value === null) return;
+    if (!gradingSubmission.value || gradeValue.value === '') return;
     saving.value = true;
     
     try {
@@ -235,7 +235,7 @@ onMounted(async () => {
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                {{ formatDate(submission.submitted_at) }}
+                                {{ formatDate(submission.submitted_at || '') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <Badge :color="getStatusColor(submission.status)">
@@ -243,7 +243,7 @@ onMounted(async () => {
                                 </Badge>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span v-if="submission.score !== null" class="text-lg font-semibold" :class="submission.score >= (task?.max_score || 20) * 0.5 ? 'text-green-600' : 'text-red-600'">
+                                <span v-if="submission.score != null" class="text-lg font-semibold" :class="(submission.score ?? 0) >= (task?.max_score || 20) * 0.5 ? 'text-green-600' : 'text-red-600'">
                                     {{ submission.score }} / {{ task?.max_score }}
                                 </span>
                                 <span v-else class="text-gray-400">-</span>
@@ -286,7 +286,7 @@ onMounted(async () => {
                         <!-- Submission Date -->
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Fecha de Entrega</h3>
-                            <p class="mt-1 text-gray-900">{{ formatDate(gradingSubmission.submitted_at) }}</p>
+                            <p class="mt-1 text-gray-900">{{ formatDate(gradingSubmission.submitted_at || '') }}</p>
                         </div>
 
                         <!-- Content -->

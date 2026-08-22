@@ -21,7 +21,7 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Asegurar códigos únicos por año escolar
             $table->unique(['code', 'school_year']);
         });

@@ -30,8 +30,8 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 */
 Broadcast::channel('section-chat.{sectionId}', function ($user, $sectionId) {
     $section = Section::find($sectionId);
-    
-    if (!$section) {
+
+    if (! $section) {
         return false;
     }
 

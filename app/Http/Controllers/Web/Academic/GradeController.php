@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Web\Academic;
 use App\Http\Controllers\Controller;
 use App\Models\Grade;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class GradeController extends Controller
 {

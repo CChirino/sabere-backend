@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
-use App\Models\TaskSubmission;
 use App\Models\Task;
+use App\Models\TaskSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class TaskSubmissionController extends Controller
 {
@@ -60,7 +59,7 @@ class TaskSubmissionController extends Controller
         $task = Task::find($request->task_id);
 
         // Verificar que la tarea esté activa (status = true)
-        if (!$task->status) {
+        if (! $task->status) {
             return $this->sendError('La tarea no está disponible', [], 403);
         }
 
@@ -77,27 +76,27 @@ class TaskSubmissionController extends Controller
 
         // Manejar archivos
         $filePaths = [];
-        
+
         // Single file (backwards compatibility)
         if ($request->hasFile('file')) {
-            $filePaths[] = $request->file('file')->store('submissions/' . $task->id, 'public');
+            $filePaths[] = $request->file('file')->store('submissions/'.$task->id, 'public');
         }
-        
+
         // Multiple files
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
-                $filePaths[] = $file->store('submissions/' . $task->id, 'public');
+                $filePaths[] = $file->store('submissions/'.$task->id, 'public');
             }
         }
 
         // Merge with existing files if updating
         $existingFiles = $existingSubmission?->file_path ? json_decode($existingSubmission->file_path, true) : [];
-        if (!is_array($existingFiles)) {
+        if (! is_array($existingFiles)) {
             $existingFiles = $existingSubmission?->file_path ? [$existingSubmission->file_path] : [];
         }
-        
+
         $allFiles = array_merge($existingFiles, $filePaths);
-        $filePathJson = !empty($allFiles) ? json_encode($allFiles) : null;
+        $filePathJson = ! empty($allFiles) ? json_encode($allFiles) : null;
 
         // Determinar si es entrega tardía
         $status = 'submitted';
@@ -173,7 +172,7 @@ class TaskSubmissionController extends Controller
 
         // Verificar permisos (solo el profesor de la materia o admin)
         $assignment = $task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para calificar esta entrega',
                 [],
@@ -215,7 +214,7 @@ class TaskSubmissionController extends Controller
 
         // Verificar permisos
         $assignment = $submission->task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para devolver esta entrega',
                 [],

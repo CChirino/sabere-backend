@@ -32,7 +32,7 @@ class SendNotificationJob implements ShouldQueue
     {
         $user = $this->notification->user;
 
-        if (!$user || !$user->email) {
+        if (! $user || ! $user->email) {
             return;
         }
 
@@ -45,6 +45,7 @@ class SendNotificationJob implements ShouldQueue
             'task_graded' => $this->sendTaskGradedEmail($user),
             'reenrollment_approved' => $this->sendReenrollmentApprovedEmail($user),
             'reenrollment_rejected' => $this->sendReenrollmentRejectedEmail($user),
+            'event_reminder' => $this->sendEventReminderEmail($user),
             default => null,
         };
 
@@ -66,7 +67,7 @@ class SendNotificationJob implements ShouldQueue
             'teacher' => $data['teacher'] ?? '',
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Nueva calificación asignada - ' . config('app.name'));
+                ->subject('Nueva calificación asignada - '.config('app.name'));
         });
     }
 
@@ -84,7 +85,7 @@ class SendNotificationJob implements ShouldQueue
             'teacher' => $data['teacher'] ?? '',
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Calificaciones finalizadas - ' . config('app.name'));
+                ->subject('Calificaciones finalizadas - '.config('app.name'));
         });
     }
 
@@ -103,7 +104,7 @@ class SendNotificationJob implements ShouldQueue
             'teacher' => $data['teacher'] ?? '',
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Nueva tarea asignada - ' . config('app.name'));
+                ->subject('Nueva tarea asignada - '.config('app.name'));
         });
     }
 
@@ -121,7 +122,7 @@ class SendNotificationJob implements ShouldQueue
             'dueDate' => $data['due_date'] ?? null,
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Recordatorio: Tarea por vencer - ' . config('app.name'));
+                ->subject('Recordatorio: Tarea por vencer - '.config('app.name'));
         });
     }
 
@@ -140,7 +141,7 @@ class SendNotificationJob implements ShouldQueue
             'maxScore' => $data['max_score'] ?? 100,
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Tarea calificada - ' . config('app.name'));
+                ->subject('Tarea calificada - '.config('app.name'));
         });
     }
 
@@ -158,7 +159,7 @@ class SendNotificationJob implements ShouldQueue
             'section' => $data['section'] ?? '',
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Reinscripción aprobada - ' . config('app.name'));
+                ->subject('Reinscripción aprobada - '.config('app.name'));
         });
     }
 
@@ -175,7 +176,29 @@ class SendNotificationJob implements ShouldQueue
             'reason' => $data['reason'] ?? '',
         ], function ($message) use ($user) {
             $message->to($user->email, $user->name)
-                ->subject('Reinscripción rechazada - ' . config('app.name'));
+                ->subject('Reinscripción rechazada - '.config('app.name'));
+        });
+    }
+
+    /**
+     * Enviar email de recordatorio de evento.
+     */
+    private function sendEventReminderEmail(User $user): void
+    {
+        $data = $this->notification->data;
+
+        Mail::send('emails.notifications.event-reminder', [
+            'user' => $user,
+            'eventTitle' => $data['event_title'] ?? 'Evento',
+            'eventType' => $data['event_type'] ?? 'academic',
+            'typeLabel' => $data['type_label'] ?? 'Académico',
+            'startDate' => $data['start_date'] ?? '',
+            'endDate' => $data['end_date'] ?? null,
+            'location' => $data['location'] ?? null,
+            'description' => $data['description'] ?? null,
+        ], function ($message) use ($user) {
+            $message->to($user->email, $user->name)
+                ->subject('Recordatorio: Evento próximo - '.config('app.name'));
         });
     }
 }

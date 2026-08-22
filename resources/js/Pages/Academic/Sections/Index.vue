@@ -40,7 +40,7 @@ const form = useForm({
     grade_id: '',
     academic_period_id: '',
     name: '',
-    capacity: null as number | null,
+    capacity: '' as string | number,
     status: true,
 });
 
@@ -48,7 +48,7 @@ const createForm = useForm({
     grade_id: '',
     academic_period_id: '',
     name: '',
-    capacity: null as number | null,
+    capacity: '' as string | number,
     status: true,
 });
 
@@ -94,7 +94,7 @@ const editSection = (section: SectionWithRelations) => {
     form.grade_id = String(section.grade_id);
     form.academic_period_id = String(section.academic_period_id);
     form.name = section.name;
-    form.capacity = section.capacity || null;
+    form.capacity = section.capacity ?? '';
     form.status = section.status;
     showEditPanel.value = true;
 };

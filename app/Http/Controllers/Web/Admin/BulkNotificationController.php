@@ -70,7 +70,7 @@ class BulkNotificationController extends Controller
     /**
      * Obtiene los usuarios según los filtros de destinatarios.
      *
-     * @param array<string> $recipientTypes
+     * @param  array<string>  $recipientTypes
      * @return \Illuminate\Database\Eloquent\Builder
      */
     private function getRecipients(array $recipientTypes)

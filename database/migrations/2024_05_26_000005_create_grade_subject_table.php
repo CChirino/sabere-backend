@@ -21,7 +21,7 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Asegurar que no se dupliquen materias en el mismo grado y año escolar
             $table->unique(['grade_id', 'subject_id', 'school_year']);
         });

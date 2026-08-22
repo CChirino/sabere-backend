@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SectionChatMessage extends Model
 {
@@ -46,7 +46,7 @@ class SectionChatMessage extends Model
      */
     public function hasAttachment(): bool
     {
-        return !empty($this->attachment_path);
+        return ! empty($this->attachment_path);
     }
 
     /**
@@ -54,10 +54,10 @@ class SectionChatMessage extends Model
      */
     public function getAttachmentUrlAttribute(): ?string
     {
-        if (!$this->attachment_path) {
+        if (! $this->attachment_path) {
             return null;
         }
 
-        return asset('storage/' . $this->attachment_path);
+        return asset('storage/'.$this->attachment_path);
     }
 }

@@ -112,4 +112,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 900),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Registro Público de Usuarios
+    |--------------------------------------------------------------------------
+    |
+    | Controla si los usuarios pueden registrarse públicamente.
+    | Para un colegio privado, esto debe ser false en producción.
+    | Los usuarios deben ser creados por el administrador.
+    |
+    */
+
+    'allow_public_registration' => env('ALLOW_PUBLIC_REGISTRATION', false),
+
 ];

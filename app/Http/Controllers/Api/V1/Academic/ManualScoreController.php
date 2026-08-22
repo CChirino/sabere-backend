@@ -52,7 +52,7 @@ class ManualScoreController extends Controller
 
         // Verificar que el profesor tenga permiso sobre esta asignación
         $assignment = SubjectAssignment::find($validated['subject_assignment_id']);
-        if ($assignment->teacher_id !== Auth::id() && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return response()->json(['message' => 'No tienes permiso para agregar notas a esta materia'], 403);
         }
 
@@ -85,7 +85,7 @@ class ManualScoreController extends Controller
     {
         $score = ManualScore::with(['student', 'subjectAssignment.subject', 'term', 'gradedBy'])->find($id);
 
-        if (!$score) {
+        if (! $score) {
             return response()->json(['message' => 'Nota manual no encontrada'], 404);
         }
 
@@ -99,13 +99,13 @@ class ManualScoreController extends Controller
     {
         $score = ManualScore::find($id);
 
-        if (!$score) {
+        if (! $score) {
             return response()->json(['message' => 'Nota manual no encontrada'], 404);
         }
 
         // Verificar permisos
         $assignment = $score->subjectAssignment;
-        if ($assignment->teacher_id !== Auth::id() && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return response()->json(['message' => 'No tienes permiso para modificar esta nota'], 403);
         }
 
@@ -136,13 +136,13 @@ class ManualScoreController extends Controller
     {
         $score = ManualScore::find($id);
 
-        if (!$score) {
+        if (! $score) {
             return response()->json(['message' => 'Nota manual no encontrada'], 404);
         }
 
         // Verificar permisos
         $assignment = $score->subjectAssignment;
-        if ($assignment->teacher_id !== Auth::id() && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return response()->json(['message' => 'No tienes permiso para eliminar esta nota'], 403);
         }
 
@@ -169,7 +169,7 @@ class ManualScoreController extends Controller
 
         // Verificar permisos
         $assignment = SubjectAssignment::find($validated['subject_assignment_id']);
-        if ($assignment->teacher_id !== Auth::id() && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return response()->json(['message' => 'No tienes permiso para agregar notas a esta materia'], 403);
         }
 

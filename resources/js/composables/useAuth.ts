@@ -8,7 +8,10 @@ export function useAuth() {
     const user = computed<User>(() => page.props.auth.user as User);
 
     const roles = computed<Role[]>(() => {
-        return user.value.roles?.map(r => r.name) || [];
+        // auth.user.roles llega como string[] (pluck en HandleInertiaRequests),
+        // pero otros endpoints devuelven objetos { name }. Soportar ambos.
+        const raw = (user.value?.roles ?? []) as unknown as (Role | { name: Role })[];
+        return raw.map(r => (typeof r === 'string' ? r : r.name));
     });
 
     const hasRole = (role: Role | Role[]): boolean => {

@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -21,6 +20,7 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::with('permissions')->get();
+
         return response()->json($roles);
     }
 
@@ -29,11 +29,11 @@ class RoleController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|unique:roles,name',
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name'
+            'permissions.*' => 'exists:permissions,name',
         ]);
 
         $role = Role::create(['name' => $validated['name']]);
-        
+
         if (isset($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
         }
@@ -51,11 +51,11 @@ class RoleController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', Rule::unique('roles')->ignore($role->id)],
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,name'
+            'permissions.*' => 'exists:permissions,name',
         ]);
 
         $role->update(['name' => $validated['name']]);
-        
+
         if (isset($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
         }
@@ -68,11 +68,12 @@ class RoleController extends Controller
         // Prevenir eliminación de roles del sistema
         if (in_array($role->name, ['super_admin', 'admin', 'teacher', 'student', 'parent'])) {
             return response()->json([
-                'message' => 'No se puede eliminar este rol del sistema'
+                'message' => 'No se puede eliminar este rol del sistema',
             ], 403);
         }
 
         $role->delete();
+
         return response()->json(null, 204);
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Web\Teacher;
 
-use App\Http\Controllers\Controller;
 use App\Events\NewChatMessage;
+use App\Http\Controllers\Controller;
 use App\Models\Section;
 use App\Models\SectionChatMessage;
 use Illuminate\Http\Request;
@@ -18,22 +18,22 @@ class SectionChatController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Obtener las secciones únicas donde el profesor tiene asignaciones activas
         $sections = Section::whereHas('subjectAssignments', function ($query) use ($user) {
             $query->where('teacher_id', $user->id)
-                  ->where('status', true);
+                ->where('status', true);
         })
-        ->with(['grade', 'academicPeriod'])
-        ->get()
-        ->map(fn($section) => [
-            'id' => $section->id,
-            'name' => $section->name,
-            'full_name' => $section->fullName,
-            'grade' => $section->grade->name,
-            'academic_period' => $section->academicPeriod->name,
-            'students_count' => $section->enrollments()->where('status', 'active')->count(),
-        ]);
+            ->with(['grade', 'academicPeriod'])
+            ->get()
+            ->map(fn ($section) => [
+                'id' => $section->id,
+                'name' => $section->name,
+                'full_name' => $section->fullName,
+                'grade' => $section->grade->name,
+                'academic_period' => $section->academicPeriod->name,
+                'students_count' => $section->enrollments()->where('status', 'active')->count(),
+            ]);
 
         return Inertia::render('Teacher/Chat/Index', [
             'sections' => $sections,
@@ -46,23 +46,26 @@ class SectionChatController extends Controller
     public function show(Section $section)
     {
         $user = Auth::user();
-        
+
         // Verificar que el profesor tiene asignación en esta sección
         $hasAssignment = $section->subjectAssignments()
             ->where('teacher_id', $user->id)
             ->where('status', true)
             ->exists();
 
-        if (!$hasAssignment) {
+        if (! $hasAssignment) {
             return redirect()->route('teacher.chat.index')
                 ->with('error', 'No tienes acceso a esta sección.');
         }
 
-        // Obtener los mensajes del chat
+        // HIGH-06: Limitar mensajes para evitar cargas masivas
         $messages = SectionChatMessage::where('section_id', $section->id)
-            ->with('user:id,name,email')
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->with('user:id,name')
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->reverse()
+            ->values();
 
         // Obtener los estudiantes de la sección
         $students = $section->students()
@@ -86,7 +89,7 @@ class SectionChatController extends Controller
                 'grade' => $section->grade->name,
                 'academic_period' => $section->academicPeriod->name,
             ],
-            'messages' => $messages->map(fn($msg) => [
+            'messages' => $messages->map(fn ($msg) => [
                 'id' => $msg->id,
                 'message' => $msg->message,
                 'type' => $msg->type,
@@ -124,7 +127,7 @@ class SectionChatController extends Controller
             ->where('status', true)
             ->exists();
 
-        if (!$hasAssignment) {
+        if (! $hasAssignment) {
             return back()->with('error', 'No tienes acceso a esta sección.');
         }
 

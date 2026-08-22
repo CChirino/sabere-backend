@@ -4,13 +4,12 @@ namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
-use App\Models\SubjectAssignment;
 use App\Models\Section;
+use App\Models\SubjectAssignment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
 
 class ScheduleController extends Controller
 {
@@ -22,7 +21,7 @@ class ScheduleController extends Controller
         $query = Schedule::with([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
-            'subjectAssignment.section.grade'
+            'subjectAssignment.section.grade',
         ]);
 
         // Filtrar por asignación de materia
@@ -114,12 +113,12 @@ class ScheduleController extends Controller
         }
 
         $schedule = Schedule::create($request->only([
-            'subject_assignment_id', 'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status'
+            'subject_assignment_id', 'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status',
         ]));
         $schedule->load([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
-            'subjectAssignment.section.grade'
+            'subjectAssignment.section.grade',
         ]);
 
         return $this->sendResponse($schedule, 'Horario creado exitosamente', 201);
@@ -133,7 +132,7 @@ class ScheduleController extends Controller
         $schedule = Schedule::with([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
-            'subjectAssignment.section.grade.educationLevel'
+            'subjectAssignment.section.grade.educationLevel',
         ])->find($id);
 
         if (is_null($schedule)) {
@@ -204,12 +203,12 @@ class ScheduleController extends Controller
         }
 
         $schedule->update($request->only([
-            'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status'
+            'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status',
         ]));
         $schedule->load([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
-            'subjectAssignment.section.grade'
+            'subjectAssignment.section.grade',
         ]);
 
         return $this->sendResponse($schedule, 'Horario actualizado exitosamente');
@@ -245,7 +244,7 @@ class ScheduleController extends Controller
         $schedules = Schedule::with(['subjectAssignment.subject', 'subjectAssignment.teacher'])
             ->whereHas('subjectAssignment', function ($q) use ($sectionId) {
                 $q->where('section_id', $sectionId)
-                  ->where('status', true);
+                    ->where('status', true);
             })
             ->where('status', true)
             ->orderBy('start_time')
@@ -274,17 +273,17 @@ class ScheduleController extends Controller
     {
         $teacher = User::find($teacherId);
 
-        if (is_null($teacher) || !$teacher->hasRole('teacher')) {
+        if (is_null($teacher) || ! $teacher->hasRole('teacher')) {
             return $this->sendError('Profesor no encontrado');
         }
 
         $schedules = Schedule::with([
             'subjectAssignment.subject',
-            'subjectAssignment.section.grade.educationLevel'
+            'subjectAssignment.section.grade.educationLevel',
         ])
             ->whereHas('subjectAssignment', function ($q) use ($teacherId) {
                 $q->where('teacher_id', $teacherId)
-                  ->where('status', true);
+                    ->where('status', true);
             })
             ->where('status', true)
             ->orderBy('start_time')
@@ -313,7 +312,7 @@ class ScheduleController extends Controller
     {
         $student = User::find($studentId);
 
-        if (is_null($student) || !$student->hasRole('student')) {
+        if (is_null($student) || ! $student->hasRole('student')) {
             return $this->sendError('Estudiante no encontrado');
         }
 
@@ -342,7 +341,7 @@ class ScheduleController extends Controller
         $schedules = Schedule::with(['subjectAssignment.subject', 'subjectAssignment.teacher'])
             ->whereHas('subjectAssignment', function ($q) use ($sectionId) {
                 $q->where('section_id', $sectionId)
-                  ->where('status', true);
+                    ->where('status', true);
             })
             ->where('day_of_week', $today)
             ->where('status', true)

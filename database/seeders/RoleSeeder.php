@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
@@ -53,7 +53,7 @@ class RoleSeeder extends Seeder
             'view reports', 'export reports',
         ];
         $director->syncPermissions(
-            array_filter($directorPermissions, fn($p) => Permission::where('name', $p)->exists())
+            array_filter($directorPermissions, fn ($p) => Permission::where('name', $p)->exists())
         );
 
         // Permisos del Coordinador (supervisión y gestión de profesores)
@@ -70,7 +70,7 @@ class RoleSeeder extends Seeder
             'view submissions', 'grade submissions',
         ];
         $coordinator->syncPermissions(
-            array_filter($coordinatorPermissions, fn($p) => Permission::where('name', $p)->exists())
+            array_filter($coordinatorPermissions, fn ($p) => Permission::where('name', $p)->exists())
         );
 
         // Permisos del Profesor
@@ -82,7 +82,7 @@ class RoleSeeder extends Seeder
             'view submissions', 'grade submissions',
         ];
         $teacher->syncPermissions(
-            array_filter($teacherPermissions, fn($p) => Permission::where('name', $p)->exists())
+            array_filter($teacherPermissions, fn ($p) => Permission::where('name', $p)->exists())
         );
 
         // Permisos del Estudiante
@@ -92,7 +92,7 @@ class RoleSeeder extends Seeder
             'submit tasks',
         ];
         $student->syncPermissions(
-            array_filter($studentPermissions, fn($p) => Permission::where('name', $p)->exists())
+            array_filter($studentPermissions, fn ($p) => Permission::where('name', $p)->exists())
         );
 
         // Permisos del Representante (igual que estudiante, solo lectura)
@@ -101,13 +101,13 @@ class RoleSeeder extends Seeder
             'view tasks',
         ];
         $guardian->syncPermissions(
-            array_filter($guardianPermissions, fn($p) => Permission::where('name', $p)->exists())
+            array_filter($guardianPermissions, fn ($p) => Permission::where('name', $p)->exists())
         );
 
         $this->command->info('Roles del sistema escolar creados exitosamente!');
         $this->command->table(
             ['Rol', 'Descripción'],
-            collect($roles)->map(fn($desc, $name) => [$name, $desc])->toArray()
+            collect($roles)->map(fn ($desc, $name) => [$name, $desc])->toArray()
         );
     }
 }

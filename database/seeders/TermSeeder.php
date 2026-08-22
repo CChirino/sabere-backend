@@ -30,8 +30,8 @@ class TermSeeder extends Seeder
             // Crear 3 lapsos para cada período
             for ($i = 1; $i <= 3; $i++) {
                 $termStart = $startDate->copy()->addDays(($i - 1) * $termDays);
-                $termEnd = $i === 3 
-                    ? $endDate 
+                $termEnd = $i === 3
+                    ? $endDate
                     : $startDate->copy()->addDays($i * $termDays)->subDay();
 
                 Term::create([

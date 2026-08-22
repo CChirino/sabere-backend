@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
 {
@@ -129,7 +129,7 @@ class Event extends Model
 
             if (in_array($role, ['coordinator'])) {
                 $q->orWhere('visibility', 'staff')
-                  ->orWhere('visibility', 'teachers');
+                    ->orWhere('visibility', 'teachers');
             }
 
             if ($role === 'teacher') {

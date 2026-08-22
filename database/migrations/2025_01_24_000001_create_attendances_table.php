@@ -28,7 +28,7 @@ return new class extends Migration
             $table->index(['student_id', 'date']);
             $table->index(['section_id', 'date']);
             $table->index(['academic_period_id', 'date']);
-            
+
             // Evitar duplicados: un estudiante solo puede tener un registro por día/sección/materia
             $table->unique(['student_id', 'section_id', 'subject_assignment_id', 'date'], 'attendance_unique');
         });

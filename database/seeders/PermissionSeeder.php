@@ -27,7 +27,7 @@ class PermissionSeeder extends Seeder
             'edit roles',
             'delete roles',
         ];
-        
+
         // Permisos para estudiantes
         $studentPermissions = [
             'view students',

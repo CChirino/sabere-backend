@@ -121,17 +121,17 @@ class EventController extends Controller
         if ($request->filled('start') && $request->filled('end')) {
             $query->where(function ($q) use ($request) {
                 $q->whereBetween('start_date', [$request->start, $request->end])
-                  ->orWhereBetween('end_date', [$request->start, $request->end])
-                  ->orWhere(function ($q2) use ($request) {
-                      $q2->where('start_date', '<=', $request->start)
-                         ->where('end_date', '>=', $request->end);
-                  });
+                    ->orWhereBetween('end_date', [$request->start, $request->end])
+                    ->orWhere(function ($q2) use ($request) {
+                        $q2->where('start_date', '<=', $request->start)
+                            ->where('end_date', '>=', $request->end);
+                    });
             });
         }
 
         if ($request->filled('month') && $request->filled('year')) {
             $query->whereMonth('start_date', $request->month)
-                  ->whereYear('start_date', $request->year);
+                ->whereYear('start_date', $request->year);
         }
 
         if ($request->filled('academic_period_id')) {
@@ -150,6 +150,7 @@ class EventController extends Controller
                 return $role;
             }
         }
+
         return 'student';
     }
 }

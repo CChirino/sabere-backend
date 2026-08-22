@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\AcademicPeriod;
 use App\Models\Enrollment;
 use App\Models\Section;
+use App\Models\StudentScore;
 use App\Models\SubjectAssignment;
 use App\Models\Task;
 use App\Models\TaskSubmission;
-use App\Models\StudentScore;
-use App\Models\AcademicPeriod;
 use App\Models\Term;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -222,7 +222,7 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return $this->sendResponse([
                 'message' => 'No tienes una inscripción activa',
                 'enrollment' => null,
@@ -319,7 +319,7 @@ class DashboardController extends Controller
         $studentsData = $students->map(function ($student) {
             $enrollment = $student->enrollments->first();
 
-            if (!$enrollment) {
+            if (! $enrollment) {
                 return [
                     'student' => $student,
                     'enrollment' => null,
@@ -388,7 +388,9 @@ class DashboardController extends Controller
     {
         // Esto es una aproximación - cuenta estudiantes sin nota en alguna materia
         $term = Term::find($termId);
-        if (!$term) return 0;
+        if (! $term) {
+            return 0;
+        }
 
         $totalExpected = 0;
         $totalGraded = 0;

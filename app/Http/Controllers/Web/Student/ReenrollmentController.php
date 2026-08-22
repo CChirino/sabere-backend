@@ -3,13 +3,10 @@
 namespace App\Http\Controllers\Web\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reenrollment;
 use App\Models\AcademicPeriod;
 use App\Models\Grade;
-use App\Models\Section;
-use App\Services\NotificationService;
+use App\Models\Reenrollment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ReenrollmentController extends Controller
@@ -22,7 +19,7 @@ class ReenrollmentController extends Controller
         $student = auth()->user();
         $currentEnrollment = $student->activeEnrollment();
 
-        if (!$currentEnrollment) {
+        if (! $currentEnrollment) {
             return redirect()->route('student.dashboard')
                 ->with('error', 'No tienes una inscripción activa para reinscribirte.');
         }
@@ -67,7 +64,7 @@ class ReenrollmentController extends Controller
         $student = auth()->user();
         $currentEnrollment = $student->activeEnrollment();
 
-        if (!$currentEnrollment) {
+        if (! $currentEnrollment) {
             return back()->with('error', 'No tienes una inscripción activa.');
         }
 
@@ -127,7 +124,7 @@ class ReenrollmentController extends Controller
             return back()->with('error', 'No tienes permiso para cancelar esta solicitud.');
         }
 
-        if (!$reenrollment->isPending()) {
+        if (! $reenrollment->isPending()) {
             return back()->with('error', 'Solo puedes cancelar solicitudes pendientes.');
         }
 

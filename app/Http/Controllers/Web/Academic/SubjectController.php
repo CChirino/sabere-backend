@@ -34,7 +34,7 @@ class SubjectController extends Controller
         $validated = $request->validate([
             'subject_area_id' => ['required', 'exists:subject_areas,id'],
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:20', 'unique:subjects,code,' . $subject->id],
+            'code' => ['required', 'string', 'max:20', 'unique:subjects,code,'.$subject->id],
             'description' => ['nullable', 'string'],
             'status' => ['boolean'],
         ]);

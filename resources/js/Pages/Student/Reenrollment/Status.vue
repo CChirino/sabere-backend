@@ -48,14 +48,15 @@ const cancelReenrollment = (reenrollment: Reenrollment) => {
     });
 };
 
-const getStatusConfig = (status: string) => {
-    const configs = {
+type BadgeColor = 'gray' | 'red' | 'yellow' | 'green' | 'blue' | 'indigo' | 'purple' | 'pink';
+const getStatusConfig = (status: string): { color: BadgeColor; label: string } => {
+    const configs: Record<string, { color: BadgeColor; label: string }> = {
         pending: { color: 'yellow', label: 'Pendiente' },
         approved: { color: 'green', label: 'Aprobada' },
         rejected: { color: 'red', label: 'Rechazada' },
         cancelled: { color: 'gray', label: 'Cancelada' },
     };
-    return configs[status as keyof typeof configs] || configs.pending;
+    return configs[status] || configs.pending;
 };
 
 const formatDate = (date: string) => {

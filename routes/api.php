@@ -1,42 +1,41 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
+use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
+use App\Http\Controllers\Api\V1\Academic\TaskController;
+use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
+use App\Http\Controllers\Api\V1\Admin\RoleController;
+use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\SocialAuthController;
-use App\Http\Controllers\Api\V1\Admin\RoleController;
-use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\DashboardController;
-use App\Http\Controllers\Api\V1\Academic\TaskController;
-use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
-use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
-use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use App\Http\Controllers\Web\Teacher\AttendanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     // Public routes - con rate limiting
-    Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:5,1');
-    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
-    
+    // MED-04: Rate limiting más estricto — 3 intentos por minuto para autenticación
+    Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:3,1');
+    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:3,1');
+
     // Google OAuth routes
-    Route::get('/login/google', [SocialAuthController::class, 'redirectToGoogle']);
-    Route::get('/login/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
+    Route::get('/login/google', [SocialAuthController::class, 'redirectToGoogle'])->middleware('throttle:5,1');
+    Route::get('/login/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->middleware('throttle:5,1');
 
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [LoginController::class, 'logout']);
-        
+
         // User routes
         Route::get('/user', function (Request $request) {
             return response()->json([
-                'user' => $request->user()
+                'user' => $request->user(),
             ]);
         });
     });
 });
-
-
 
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Ruta para obtener el usuario autenticado
@@ -51,10 +50,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::prefix('v1/admin')->middleware(['role:admin|director'])->group(function () {
         // Rutas para gestión de roles
         Route::apiResource('roles', RoleController::class);
-        
+
         // Rutas para gestión de usuarios
         Route::apiResource('users', UserController::class);
-        
+
         // Rutas adicionales para usuarios
         Route::post('users/{user}/assign-roles', [UserController::class, 'assignRoles'])
             ->name('users.assign-roles');
@@ -101,9 +100,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
                 ->where('student_id', $studentId)
                 ->where('status', true)
                 ->exists();
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 return response()->json(['message' => 'No tienes acceso a este estudiante'], 403);
             }
+
             return app(TaskSubmissionController::class)->index(request()->merge(['student_id' => $studentId, 'status' => 'graded']));
         });
         Route::get('student/{studentId}/tasks', function ($studentId) {
@@ -112,9 +112,10 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
                 ->where('student_id', $studentId)
                 ->where('status', true)
                 ->exists();
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 return response()->json(['message' => 'No tienes acceso a este estudiante'], 403);
             }
+
             return app(TaskController::class)->forStudent($studentId);
         });
         Route::get('terms', function () {

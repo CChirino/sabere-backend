@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
 use App\Models\Section;
-use App\Models\Grade;
-use App\Models\AcademicPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;

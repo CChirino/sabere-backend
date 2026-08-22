@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
-use App\Models\Term;
 use App\Models\AcademicPeriod;
+use App\Models\Term;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -71,7 +71,7 @@ class TermController extends Controller
         }
 
         $term = Term::create($request->only([
-            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status'
+            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status',
         ]));
         $term->load('academicPeriod');
 
@@ -132,7 +132,7 @@ class TermController extends Controller
         }
 
         $term->update($request->only([
-            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status'
+            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status',
         ]));
         $term->load('academicPeriod');
 

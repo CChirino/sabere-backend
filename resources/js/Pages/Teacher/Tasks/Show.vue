@@ -69,7 +69,8 @@ const fetchTask = async () => {
         task.value = data.data;
         
         if (task.value) {
-            await fetchTerms(task.value.subject_assignment?.academic_period_id);
+            const periodId = task.value.subject_assignment?.academic_period_id;
+            if (periodId) await fetchTerms(periodId);
             populateForm();
         }
     } catch (error) {
@@ -238,11 +239,11 @@ onMounted(() => {
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Disponible desde</h3>
-                        <p class="mt-1 text-gray-900">{{ formatDate(task.available_from) }}</p>
+                        <p class="mt-1 text-gray-900">{{ formatDate(task.available_from || '') }}</p>
                     </div>
                     <div>
                         <h3 class="text-sm font-medium text-gray-500">Fecha de entrega</h3>
-                        <p class="mt-1 text-gray-900">{{ formatDate(task.due_date) }}</p>
+                        <p class="mt-1 text-gray-900">{{ formatDate(task.due_date || '') }}</p>
                     </div>
                 </div>
             </Card>

@@ -62,7 +62,7 @@ class SubjectAssignmentController extends Controller
 
         // Verificar que el usuario tenga rol de profesor
         $teacher = User::find($request->teacher_id);
-        if (!$teacher->hasRole('teacher')) {
+        if (! $teacher->hasRole('teacher')) {
             return $this->sendError(
                 'El usuario seleccionado no tiene rol de profesor',
                 [],
@@ -85,7 +85,7 @@ class SubjectAssignmentController extends Controller
         }
 
         $assignment = SubjectAssignment::create($request->only([
-            'teacher_id', 'subject_id', 'section_id', 'academic_period_id', 'status'
+            'teacher_id', 'subject_id', 'section_id', 'academic_period_id', 'status',
         ]));
         $assignment->load(['teacher', 'subject', 'section.grade', 'academicPeriod']);
 
@@ -130,7 +130,7 @@ class SubjectAssignmentController extends Controller
         // Si se cambia el profesor, verificar que tenga rol de profesor
         if ($request->has('teacher_id')) {
             $teacher = User::find($request->teacher_id);
-            if (!$teacher->hasRole('teacher')) {
+            if (! $teacher->hasRole('teacher')) {
                 return $this->sendError(
                     'El usuario seleccionado no tiene rol de profesor',
                     [],

@@ -12,8 +12,8 @@ class LoginController extends Controller
 {
     /**
      * Handle an authentication attempt.
+     * MED-03: Verifica que el email esté confirmado antes de permitir login.
      *
-     * @param  \App\Http\Requests\Auth\LoginRequest  $request
      * @return \Illuminate\Http\JsonResponse
      *
      * @throws \Illuminate\Validation\ValidationException
@@ -22,19 +22,41 @@ class LoginController extends Controller
     {
         $credentials = $request->validated();
 
-        if (!Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
                 'email' => ['Las credenciales proporcionadas son incorrectas.'],
             ]);
         }
 
         $user = User::where('email', $request->email)->firstOrFail();
-        
+
+        // MED-03: Verificar que el email esté confirmado
+        if (! $user->hasVerifiedEmail()) {
+            Auth::logout();
+
+            return $this->sendError(
+                'Debes verificar tu correo electrónico antes de iniciar sesión.',
+                ['email' => ['Email no verificado.']],
+                403
+            );
+        }
+
+        // Verificar que el usuario tiene al menos un rol
+        if ($user->roles->isEmpty()) {
+            Auth::logout();
+
+            return $this->sendError(
+                'Tu cuenta no tiene permisos asignados. Contacta al administrador del colegio.',
+                [],
+                403
+            );
+        }
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return $this->sendResponse(
             [
-                'user' => $user,
+                'user' => $user->load('roles'),
                 'token' => $token,
                 'token_type' => 'Bearer',
             ],
@@ -45,7 +67,6 @@ class LoginController extends Controller
     /**
      * Log the user out (Invalidate the token).
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function logout()

@@ -9,8 +9,8 @@ use App\Models\Term;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class StudentScoreController extends Controller
 {
@@ -24,7 +24,7 @@ class StudentScoreController extends Controller
             'subjectAssignment.subject',
             'subjectAssignment.section.grade',
             'term',
-            'gradedBy'
+            'gradedBy',
         ]);
 
         // Filtrar por estudiante
@@ -47,7 +47,9 @@ class StudentScoreController extends Controller
             $query->where('is_final', true);
         }
 
-        $scores = $query->get();
+        // MEJORA-05: Paginación para evitar cargar miles de registros
+        $perPage = min($request->get('per_page', 50), 200); // máx 200 por página
+        $scores = $query->orderBy('term_id')->paginate($perPage);
 
         return $this->sendResponse($scores, 'Calificaciones obtenidas exitosamente');
     }
@@ -72,13 +74,13 @@ class StudentScoreController extends Controller
 
         // Verificar que el estudiante tenga rol de estudiante
         $student = User::find($request->student_id);
-        if (!$student->hasRole('student')) {
+        if (! $student->hasRole('student')) {
             return $this->sendError('El usuario no es un estudiante', [], 422);
         }
 
         // Verificar permisos (solo el profesor de la materia o admin)
         $assignment = SubjectAssignment::find($request->subject_assignment_id);
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para registrar calificaciones en esta materia',
                 [],
@@ -126,7 +128,7 @@ class StudentScoreController extends Controller
             'subjectAssignment.subject',
             'subjectAssignment.section.grade.educationLevel',
             'term',
-            'gradedBy'
+            'gradedBy',
         ])->find($id);
 
         if (is_null($score)) {
@@ -149,7 +151,7 @@ class StudentScoreController extends Controller
 
         // Verificar permisos
         $assignment = $score->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para modificar esta calificación',
                 [],
@@ -186,7 +188,7 @@ class StudentScoreController extends Controller
 
         // Verificar permisos
         $assignment = $score->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director'])) {
             return $this->sendError(
                 'No tienes permiso para eliminar esta calificación',
                 [],
@@ -206,7 +208,7 @@ class StudentScoreController extends Controller
     {
         $student = User::find($studentId);
 
-        if (is_null($student) || !$student->hasRole('student')) {
+        if (is_null($student) || ! $student->hasRole('student')) {
             return $this->sendError('Estudiante no encontrado');
         }
 
@@ -244,7 +246,7 @@ class StudentScoreController extends Controller
     {
         $scores = StudentScore::with([
             'subjectAssignment.subject',
-            'term.academicPeriod'
+            'term.academicPeriod',
         ])
             ->where('student_id', $studentId)
             ->orderBy('term_id')
@@ -274,7 +276,7 @@ class StudentScoreController extends Controller
 
         // Verificar permisos
         $assignment = SubjectAssignment::find($request->subject_assignment_id);
-        if (Auth::id() !== $assignment->teacher_id && !Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
+        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
             return $this->sendError(
                 'No tienes permiso para registrar calificaciones en esta materia',
                 [],
@@ -294,6 +296,7 @@ class StudentScoreController extends Controller
 
             if ($exists) {
                 $errors[] = "Ya existe calificación para el estudiante ID {$scoreData['student_id']}";
+
                 continue;
             }
 

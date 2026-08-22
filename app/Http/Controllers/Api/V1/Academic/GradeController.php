@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Academic;
 
 use App\Http\Controllers\Controller;
-use App\Models\EducationLevel;
 use App\Models\Grade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,9 +12,6 @@ class GradeController extends Controller
 {
     /**
      * Listar todos los grados
-     * 
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -27,15 +23,12 @@ class GradeController extends Controller
         }
 
         $grades = $query->get();
-        
+
         return $this->sendResponse($grades, 'Grados obtenidos exitosamente');
     }
 
     /**
      * Almacenar un nuevo grado
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
@@ -67,9 +60,6 @@ class GradeController extends Controller
 
     /**
      * Mostrar un grado específico
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(int $id): JsonResponse
     {
@@ -84,10 +74,6 @@ class GradeController extends Controller
 
     /**
      * Actualizar un grado
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function update(Request $request, int $id): JsonResponse
     {
@@ -126,9 +112,6 @@ class GradeController extends Controller
 
     /**
      * Eliminar un grado
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function destroy(int $id): JsonResponse
     {
@@ -154,9 +137,6 @@ class GradeController extends Controller
 
     /**
      * Obtener las materias de un grado específico
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function subjects(int $id): JsonResponse
     {

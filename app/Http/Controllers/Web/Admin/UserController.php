@@ -98,7 +98,7 @@ class UserController extends Controller
             'file.max' => 'El archivo no debe superar los 5MB.',
         ]);
 
-        $import = new UsersImport();
+        $import = new UsersImport;
         Excel::import($import, $request->file('file'));
 
         $imported = $import->getImportedCount();
@@ -109,7 +109,7 @@ class UserController extends Controller
             return back()->with('success', "Se importaron {$imported} usuarios correctamente.");
         }
 
-        if ($imported > 0 && !empty($errors)) {
+        if ($imported > 0 && ! empty($errors)) {
             return back()
                 ->with('warning', "Se importaron {$imported} usuarios. {$skipped} filas fueron omitidas.")
                 ->with('import_errors', $errors);
@@ -137,7 +137,7 @@ class UserController extends Controller
             ['Carlos López', 'carlos@ejemplo.com', 'password123', 'student,guardian'],
         ];
 
-        $callback = function() use ($columns, $examples) {
+        $callback = function () use ($columns, $examples) {
             $file = fopen('php://output', 'w');
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
             fputcsv($file, $columns);

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->boolean('status')->default(true);
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Asegurar que no haya duplicados de grados por nivel educativo
             $table->unique(['education_level_id', 'numeric_equivalent']);
         });

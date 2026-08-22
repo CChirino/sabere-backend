@@ -12,9 +12,6 @@ class AcademicPeriodController extends Controller
 {
     /**
      * Listar todos los períodos académicos
-     * 
-     * @param Request $request
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -29,15 +26,12 @@ class AcademicPeriodController extends Controller
         $query->orderBy('start_date');
 
         $periods = $query->get();
-        
+
         return $this->sendResponse($periods, 'Períodos académicos obtenidos exitosamente');
     }
 
     /**
      * Almacenar un nuevo período académico
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
@@ -70,7 +64,7 @@ class AcademicPeriodController extends Controller
         }
 
         $period = AcademicPeriod::create($request->only([
-            'name', 'code', 'school_year', 'start_date', 'end_date', 'status'
+            'name', 'code', 'school_year', 'start_date', 'end_date', 'status',
         ]));
 
         return $this->sendResponse($period, 'Período académico creado exitosamente', 201);
@@ -78,9 +72,6 @@ class AcademicPeriodController extends Controller
 
     /**
      * Mostrar un período académico específico
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function show(int $id): JsonResponse
     {
@@ -95,10 +86,6 @@ class AcademicPeriodController extends Controller
 
     /**
      * Actualizar un período académico
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
      */
     public function update(Request $request, int $id): JsonResponse
     {
@@ -138,7 +125,7 @@ class AcademicPeriodController extends Controller
         }
 
         $period->update($request->only([
-            'name', 'code', 'school_year', 'start_date', 'end_date', 'status'
+            'name', 'code', 'school_year', 'start_date', 'end_date', 'status',
         ]));
 
         return $this->sendResponse($period, 'Período académico actualizado exitosamente');
@@ -146,9 +133,6 @@ class AcademicPeriodController extends Controller
 
     /**
      * Eliminar un período académico
-     *
-     * @param int $id
-     * @return JsonResponse
      */
     public function destroy(int $id): JsonResponse
     {
@@ -159,7 +143,7 @@ class AcademicPeriodController extends Controller
         }
 
         // Aquí podrías agregar validaciones adicionales, como verificar si hay calificaciones asociadas
-        
+
         $period->delete();
 
         return $this->sendResponse(null, 'Período académico eliminado exitosamente');
@@ -167,9 +151,6 @@ class AcademicPeriodController extends Controller
 
     /**
      * Obtener los períodos académicos por año escolar
-     * 
-     * @param string $schoolYear
-     * @return JsonResponse
      */
     public function bySchoolYear(string $schoolYear): JsonResponse
     {
@@ -190,13 +171,11 @@ class AcademicPeriodController extends Controller
 
     /**
      * Obtener el período académico actual
-     * 
-     * @return JsonResponse
      */
     public function current(): JsonResponse
     {
         $today = now()->format('Y-m-d');
-        
+
         $period = AcademicPeriod::where('start_date', '<=', $today)
             ->where('end_date', '>=', $today)
             ->where('status', true)
