@@ -42,11 +42,11 @@ class SecurityHeaders
 
         $csp = implode('; ', [
             "default-src 'self'",
-            trim("script-src 'self' 'unsafe-inline' 'unsafe-eval' {$viteHttp}"), // unsafe-eval necesario para Vue/Inertia dev
+            trim("script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com {$viteHttp}"), // unsafe-eval necesario para Vue/Inertia dev; Cloudflare Insights en producción
             trim("style-src 'self' 'unsafe-inline' fonts.bunny.net {$viteHttp}"),
             "font-src 'self' fonts.bunny.net data:",
             "img-src 'self' data: blob:",
-            trim("connect-src 'self' {$this->getReverbWsUrl()} {$viteHttp} {$viteWs}"),
+            trim("connect-src 'self' {$this->getReverbWsUrl()} https://cloudflareinsights.com {$viteHttp} {$viteWs}"),
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",
