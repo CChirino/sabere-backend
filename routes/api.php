@@ -118,6 +118,18 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
             return app(TaskController::class)->forStudent($studentId);
         });
+        Route::get('student/{studentId}/schedule', function ($studentId) {
+            // HIGH-04: Verificar que el guardian tiene relación con el estudiante
+            $hasAccess = \App\Models\StudentGuardian::where('guardian_id', auth()->id())
+                ->where('student_id', $studentId)
+                ->where('status', true)
+                ->exists();
+            if (! $hasAccess) {
+                return response()->json(['message' => 'No tienes acceso a este estudiante'], 403);
+            }
+
+            return app(ScheduleController::class)->byStudent($studentId);
+        });
         Route::get('terms', function () {
             return app(\App\Http\Controllers\Api\V1\Academic\TermController::class)->index(request());
         });

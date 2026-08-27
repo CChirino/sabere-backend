@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import StatCard from '@/Components/UI/StatCard.vue';
 import Card from '@/Components/UI/Card.vue';
@@ -373,7 +373,7 @@ const formatEventDate = (dateString: string) => {
                         :key="item.student.id"
                         class="rounded-lg border border-gray-200 p-4"
                     >
-                        <div class="flex items-center justify-between">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
                                 <h4 class="text-lg font-medium text-gray-900">{{ item.student.name }}</h4>
                                 <p v-if="item.enrollment" class="text-sm text-gray-500">
@@ -381,16 +381,34 @@ const formatEventDate = (dateString: string) => {
                                 </p>
                                 <p v-else class="text-sm text-red-500">Sin inscripción activa</p>
                             </div>
-                            <div class="text-right">
-                                <div v-if="item.current_average != null" class="mb-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div v-if="item.current_average != null" class="mr-2">
                                     <span class="text-sm text-gray-500">Promedio:</span>
                                     <Badge :color="getScoreColor(item.current_average!)" class="ml-2">
                                         {{ item.current_average }}
                                     </Badge>
                                 </div>
-                                <div v-if="item.pending_tasks > 0">
+                                <div v-if="item.pending_tasks > 0" class="mr-2">
                                     <Badge color="yellow">{{ item.pending_tasks }} tareas pendientes</Badge>
                                 </div>
+                                <Link
+                                    :href="`/guardian/students/${item.student.id}/scores`"
+                                    class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors"
+                                >
+                                    Boleta
+                                </Link>
+                                <Link
+                                    :href="`/guardian/students/${item.student.id}/tasks`"
+                                    class="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-200 transition-colors"
+                                >
+                                    Tareas
+                                </Link>
+                                <Link
+                                    :href="`/guardian/students/${item.student.id}/schedule`"
+                                    class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors"
+                                >
+                                    Horario
+                                </Link>
                             </div>
                         </div>
                     </div>

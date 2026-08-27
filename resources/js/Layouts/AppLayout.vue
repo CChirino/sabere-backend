@@ -230,6 +230,14 @@ const navigation = computed<NavItem[]>(() => [
         icon: 'refresh',
         show: isStudent.value,
     },
+    // Representante
+    {
+        name: 'Mis Representados',
+        href: route('guardian.students'),
+        routeName: 'guardian.students.*',
+        icon: 'users',
+        show: isGuardian.value,
+    },
     // Cronogramas - Profesor
     {
         name: 'Cronogramas',
