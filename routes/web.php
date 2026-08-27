@@ -237,6 +237,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/students', fn () => Inertia::render('Guardian/Students'))->name('students');
         Route::get('/students/{id}/scores', fn ($id) => Inertia::render('Guardian/StudentScores', ['studentId' => (int) $id]))->name('students.scores');
         Route::get('/students/{id}/tasks', fn ($id) => Inertia::render('Guardian/StudentTasks', ['studentId' => (int) $id]))->name('students.tasks');
+        Route::get('/students/{id}/tasks/{taskId}', fn ($id, $taskId) => Inertia::render('Guardian/StudentTaskShow', ['studentId' => (int) $id, 'taskId' => (int) $taskId]))->name('students.tasks.show');
         Route::get('/students/{id}/schedule', fn ($id) => Inertia::render('Guardian/StudentSchedule', ['studentId' => (int) $id]))->name('students.schedule');
     });
 });

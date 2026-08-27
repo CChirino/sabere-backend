@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
 use App\Http\Controllers\Api\V1\Academic\TaskController;
@@ -129,6 +130,41 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
             }
 
             return app(ScheduleController::class)->byStudent($studentId);
+        });
+        Route::get('student/{studentId}/tasks/{taskId}', function ($studentId, $taskId) {
+            // HIGH-04: Verificar que el guardian tiene relación con el estudiante
+            $hasAccess = \App\Models\StudentGuardian::where('guardian_id', auth()->id())
+                ->where('student_id', $studentId)
+                ->where('status', true)
+                ->exists();
+            if (! $hasAccess) {
+                return response()->json(['message' => 'No tienes acceso a este estudiante'], 403);
+            }
+
+            $task = \App\Models\Task::with([
+                'subjectAssignment.subject',
+                'subjectAssignment.section.grade.educationLevel',
+                'subjectAssignment.teacher',
+                'term',
+            ])->find($taskId);
+
+            if (! $task) {
+                return response()->json(['message' => 'Tarea no encontrada'], 404);
+            }
+
+            $submission = \App\Models\TaskSubmission::with(['gradedBy'])
+                ->where('task_id', $taskId)
+                ->where('student_id', $studentId)
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'task' => $task,
+                    'submission' => $submission,
+                ],
+                'message' => 'Tarea obtenida exitosamente',
+            ]);
         });
         Route::get('terms', function () {
             return app(\App\Http\Controllers\Api\V1\Academic\TermController::class)->index(request());
