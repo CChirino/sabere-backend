@@ -7,7 +7,6 @@ use App\Models\AcademicPeriod;
 use App\Models\Term;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class TermController extends Controller
 {
@@ -33,7 +32,7 @@ class TermController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'academic_period_id' => 'required|exists:academic_periods,id',
             'name' => 'required|string|max:100',
             'number' => 'required|integer|min:1|max:4',
@@ -43,13 +42,9 @@ class TermController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar que no exista un lapso con el mismo número para el período
-        $exists = Term::where('academic_period_id', $request->academic_period_id)
-            ->where('number', $request->number)
+        $exists = Term::where('academic_period_id', $validated['academic_period_id'])
+            ->where('number', $validated['number'])
             ->exists();
 
         if ($exists) {
@@ -61,8 +56,8 @@ class TermController extends Controller
         }
 
         // Verificar que las fechas estén dentro del período académico
-        $period = AcademicPeriod::find($request->academic_period_id);
-        if ($request->start_date < $period->start_date || $request->end_date > $period->end_date) {
+        $period = AcademicPeriod::find($validated['academic_period_id']);
+        if ($validated['start_date'] < $period->start_date || $validated['end_date'] > $period->end_date) {
             return $this->sendError(
                 'Las fechas del lapso deben estar dentro del período académico',
                 [],
@@ -70,9 +65,7 @@ class TermController extends Controller
             );
         }
 
-        $term = Term::create($request->only([
-            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status',
-        ]));
+        $term = Term::create($validated);
         $term->load('academicPeriod');
 
         return $this->sendResponse($term, 'Lapso creado exitosamente', 201);
@@ -103,7 +96,7 @@ class TermController extends Controller
             return $this->sendError('Lapso no encontrado');
         }
 
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'academic_period_id' => 'required|exists:academic_periods,id',
             'name' => 'required|string|max:100',
             'number' => 'required|integer|min:1|max:4',
@@ -113,13 +106,9 @@ class TermController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar duplicados excluyendo el actual
-        $exists = Term::where('academic_period_id', $request->academic_period_id)
-            ->where('number', $request->number)
+        $exists = Term::where('academic_period_id', $validated['academic_period_id'])
+            ->where('number', $validated['number'])
             ->where('id', '!=', $id)
             ->exists();
 
@@ -131,9 +120,7 @@ class TermController extends Controller
             );
         }
 
-        $term->update($request->only([
-            'academic_period_id', 'name', 'number', 'start_date', 'end_date', 'weight', 'status',
-        ]));
+        $term->update($validated);
         $term->load('academicPeriod');
 
         return $this->sendResponse($term, 'Lapso actualizado exitosamente');

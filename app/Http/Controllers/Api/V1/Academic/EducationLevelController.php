@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\EducationLevel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class EducationLevelController extends Controller
 {
@@ -25,18 +24,14 @@ class EducationLevelController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:10|unique:education_levels,code',
             'description' => 'nullable|string',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        $educationLevel = EducationLevel::create($request->only(['name', 'code', 'description', 'status']));
+        $educationLevel = EducationLevel::create($validated);
 
         return $this->sendResponse($educationLevel, 'Nivel educativo creado exitosamente', 201);
     }
@@ -66,18 +61,14 @@ class EducationLevelController extends Controller
             return $this->sendError('Nivel educativo no encontrado');
         }
 
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:10|unique:education_levels,code,'.$id,
             'description' => 'nullable|string',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        $educationLevel->update($request->only(['name', 'code', 'description', 'status']));
+        $educationLevel->update($validated);
 
         return $this->sendResponse($educationLevel, 'Nivel educativo actualizado exitosamente');
     }

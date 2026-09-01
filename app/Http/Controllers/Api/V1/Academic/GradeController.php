@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Grade;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class GradeController extends Controller
 {
@@ -32,27 +31,23 @@ class GradeController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'education_level_id' => 'required|exists:education_levels,id',
             'name' => 'required|string|max:100',
             'numeric_equivalent' => 'required|integer|min:1|max:6',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar que no exista un grado con el mismo equivalente numérico en el mismo nivel
-        $exists = Grade::where('education_level_id', $request->education_level_id)
-            ->where('numeric_equivalent', $request->numeric_equivalent)
+        $exists = Grade::where('education_level_id', $validated['education_level_id'])
+            ->where('numeric_equivalent', $validated['numeric_equivalent'])
             ->exists();
 
         if ($exists) {
             return $this->sendError('Ya existe un grado con este número en el nivel educativo seleccionado', [], 409);
         }
 
-        $grade = Grade::create($request->only(['education_level_id', 'name', 'numeric_equivalent', 'status']));
+        $grade = Grade::create($validated);
         $grade->load('educationLevel');
 
         return $this->sendResponse($grade, 'Grado creado exitosamente', 201);
@@ -83,20 +78,16 @@ class GradeController extends Controller
             return $this->sendError('Grado no encontrado');
         }
 
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'education_level_id' => 'required|exists:education_levels,id',
             'name' => 'required|string|max:100',
             'numeric_equivalent' => 'required|integer|min:1|max:6',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar que no exista otro grado con el mismo equivalente numérico en el mismo nivel
-        $exists = Grade::where('education_level_id', $request->education_level_id)
-            ->where('numeric_equivalent', $request->numeric_equivalent)
+        $exists = Grade::where('education_level_id', $validated['education_level_id'])
+            ->where('numeric_equivalent', $validated['numeric_equivalent'])
             ->where('id', '!=', $id)
             ->exists();
 
@@ -104,7 +95,7 @@ class GradeController extends Controller
             return $this->sendError('Ya existe un grado con este número en el nivel educativo seleccionado', [], 409);
         }
 
-        $grade->update($request->only(['education_level_id', 'name', 'numeric_equivalent', 'status']));
+        $grade->update($validated);
         $grade->load('educationLevel');
 
         return $this->sendResponse($grade, 'Grado actualizado exitosamente');

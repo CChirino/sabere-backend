@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -40,5 +41,42 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function withRole(string $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role) {
+            $user->assignRole($role);
+        });
+    }
+
+    public function admin(): static
+    {
+        return $this->withRole('admin');
+    }
+
+    public function director(): static
+    {
+        return $this->withRole('director');
+    }
+
+    public function coordinator(): static
+    {
+        return $this->withRole('coordinator');
+    }
+
+    public function teacher(): static
+    {
+        return $this->withRole('teacher');
+    }
+
+    public function student(): static
+    {
+        return $this->withRole('student');
+    }
+
+    public function guardian(): static
+    {
+        return $this->withRole('guardian');
     }
 }

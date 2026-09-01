@@ -8,7 +8,6 @@ use App\Models\TaskSubmission;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class TaskSubmissionController extends Controller
 {
@@ -18,6 +17,26 @@ class TaskSubmissionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = TaskSubmission::with(['task.subjectAssignment.subject', 'student', 'gradedBy']);
+
+        $user = Auth::user();
+
+        // Los estudiantes solo ven sus propias entregas
+        if ($user->hasRole('student')) {
+            $query->where('student_id', $user->id);
+        }
+
+        // Los representantes solo ven las de sus estudiantes vinculados
+        if ($user->hasRole('guardian')) {
+            $studentIds = $user->students()->pluck('users.id');
+            $query->whereIn('student_id', $studentIds);
+        }
+
+        // Los profesores solo ven las entregas de sus asignaciones
+        if ($user->hasRole('teacher')) {
+            $query->whereHas('task.subjectAssignment', function ($q) use ($user) {
+                $q->where('teacher_id', $user->id);
+            });
+        }
 
         // Filtrar por tarea
         if ($request->has('task_id')) {
@@ -44,7 +63,7 @@ class TaskSubmissionController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'task_id' => 'required|exists:tasks,id',
             'content' => 'nullable|string',
             'file' => 'nullable|file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip,rar,txt,odt,ods,odp,webp',
@@ -52,11 +71,9 @@ class TaskSubmissionController extends Controller
             'files.*' => 'file|max:10240|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,zip,rar,txt,odt,ods,odp,webp',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $task = Task::findOrFail($validated['task_id']);
 
-        $task = Task::find($request->task_id);
+        $this->authorize('create', [TaskSubmission::class, $task]);
 
         // Verificar que la tarea esté activa (status = true)
         if (! $task->status) {
@@ -66,7 +83,7 @@ class TaskSubmissionController extends Controller
         $studentId = Auth::id();
 
         // Verificar que no exista ya una entrega calificada
-        $existingSubmission = TaskSubmission::where('task_id', $request->task_id)
+        $existingSubmission = TaskSubmission::where('task_id', $validated['task_id'])
             ->where('student_id', $studentId)
             ->first();
 
@@ -105,9 +122,9 @@ class TaskSubmissionController extends Controller
         }
 
         $data = [
-            'task_id' => $request->task_id,
+            'task_id' => $validated['task_id'],
             'student_id' => $studentId,
-            'content' => $request->content,
+            'content' => $validated['content'] ?? null,
             'file_path' => $filePathJson,
             'submitted_at' => now(),
             'status' => $status,
@@ -137,6 +154,8 @@ class TaskSubmissionController extends Controller
             return $this->sendError('Entrega no encontrada');
         }
 
+        $this->authorize('view', $submission);
+
         return $this->sendResponse($submission, 'Entrega obtenida exitosamente');
     }
 
@@ -151,18 +170,16 @@ class TaskSubmissionController extends Controller
             return $this->sendError('Entrega no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('grade', $submission);
+
+        $validated = $request->validate([
             'score' => 'required|numeric|min:0',
             'feedback' => 'nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar que la nota no exceda el máximo
         $task = $submission->task;
-        if ($request->score > $task->max_score) {
+        if ($validated['score'] > $task->max_score) {
             return $this->sendError(
                 "La nota no puede exceder el máximo de {$task->max_score}",
                 [],
@@ -170,19 +187,9 @@ class TaskSubmissionController extends Controller
             );
         }
 
-        // Verificar permisos (solo el profesor de la materia o admin)
-        $assignment = $task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return $this->sendError(
-                'No tienes permiso para calificar esta entrega',
-                [],
-                403
-            );
-        }
-
         $submission->update([
-            'score' => $request->score,
-            'feedback' => $request->feedback,
+            'score' => $validated['score'],
+            'feedback' => $validated['feedback'] ?? null,
             'graded_by' => Auth::id(),
             'graded_at' => now(),
             'status' => 'graded',
@@ -204,26 +211,14 @@ class TaskSubmissionController extends Controller
             return $this->sendError('Entrega no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('returnForCorrection', $submission);
+
+        $validated = $request->validate([
             'feedback' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        // Verificar permisos
-        $assignment = $submission->task->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return $this->sendError(
-                'No tienes permiso para devolver esta entrega',
-                [],
-                403
-            );
-        }
-
         $submission->update([
-            'feedback' => $request->feedback,
+            'feedback' => $validated['feedback'],
             'status' => 'returned',
         ]);
 
@@ -237,6 +232,8 @@ class TaskSubmissionController extends Controller
      */
     public function byStudent(int $studentId): JsonResponse
     {
+        $this->authorize('viewByStudent', [TaskSubmission::class, $studentId]);
+
         $submissions = TaskSubmission::with(['task.subjectAssignment.subject', 'task.term'])
             ->where('student_id', $studentId)
             ->orderBy('submitted_at', 'desc')

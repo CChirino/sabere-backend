@@ -8,7 +8,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class StudentGuardianController extends Controller
 {
@@ -18,6 +17,27 @@ class StudentGuardianController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = StudentGuardian::with(['guardian', 'student']);
+
+        $user = Auth::user();
+
+        // Los estudiantes solo ven sus propios representantes
+        if ($user->hasRole('student')) {
+            $query->where('student_id', $user->id);
+        }
+
+        // Los representantes solo ven sus propias relaciones
+        if ($user->hasRole('guardian')) {
+            $query->where('guardian_id', $user->id);
+        }
+
+        // Los profesores solo ven relaciones de estudiantes en sus secciones
+        if ($user->hasRole('teacher')) {
+            $sectionIds = $user->subjectAssignments()->pluck('section_id');
+            $studentIds = \App\Models\Enrollment::whereIn('section_id', $sectionIds)
+                ->where('status', 'active')
+                ->pluck('student_id');
+            $query->whereIn('student_id', $studentIds);
+        }
 
         // Filtrar por representante
         if ($request->has('guardian_id')) {
@@ -39,7 +59,7 @@ class StudentGuardianController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'guardian_id' => 'required|exists:users,id',
             'student_id' => 'required|exists:users,id',
             'relationship' => 'required|in:father,mother,guardian,grandparent,sibling,other',
@@ -50,25 +70,23 @@ class StudentGuardianController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $this->authorize('create', StudentGuardian::class);
 
         // Verificar que el guardian tenga rol de representante
-        $guardian = User::find($request->guardian_id);
+        $guardian = User::find($validated['guardian_id']);
         if (! $guardian->hasRole('guardian')) {
             return $this->sendError('El usuario seleccionado no tiene rol de representante', [], 422);
         }
 
         // Verificar que el student tenga rol de estudiante
-        $student = User::find($request->student_id);
+        $student = User::find($validated['student_id']);
         if (! $student->hasRole('student')) {
             return $this->sendError('El usuario seleccionado no tiene rol de estudiante', [], 422);
         }
 
         // Verificar que no exista ya la relación
-        $exists = StudentGuardian::where('guardian_id', $request->guardian_id)
-            ->where('student_id', $request->student_id)
+        $exists = StudentGuardian::where('guardian_id', $validated['guardian_id'])
+            ->where('student_id', $validated['student_id'])
             ->exists();
 
         if ($exists) {
@@ -80,15 +98,21 @@ class StudentGuardianController extends Controller
         }
 
         // Si es representante principal, quitar el flag de otros
-        if ($request->is_primary) {
-            StudentGuardian::where('student_id', $request->student_id)
+        if ($validated['is_primary'] ?? false) {
+            StudentGuardian::where('student_id', $validated['student_id'])
                 ->update(['is_primary' => false]);
         }
 
-        $relation = StudentGuardian::create($request->only([
-            'guardian_id', 'student_id', 'relationship', 'is_primary',
-            'can_pickup', 'emergency_contact', 'phone', 'status',
-        ]));
+        $relation = StudentGuardian::create([
+            'guardian_id' => $validated['guardian_id'],
+            'student_id' => $validated['student_id'],
+            'relationship' => $validated['relationship'],
+            'is_primary' => $validated['is_primary'] ?? false,
+            'can_pickup' => $validated['can_pickup'] ?? false,
+            'emergency_contact' => $validated['emergency_contact'] ?? false,
+            'phone' => $validated['phone'] ?? null,
+            'status' => $validated['status'] ?? true,
+        ]);
         $relation->load(['guardian', 'student']);
 
         return $this->sendResponse($relation, 'Relación creada exitosamente', 201);
@@ -105,6 +129,8 @@ class StudentGuardianController extends Controller
             return $this->sendError('Relación no encontrada');
         }
 
+        $this->authorize('view', $relation);
+
         return $this->sendResponse($relation, 'Relación obtenida exitosamente');
     }
 
@@ -119,7 +145,9 @@ class StudentGuardianController extends Controller
             return $this->sendError('Relación no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('update', $relation);
+
+        $validated = $request->validate([
             'relationship' => 'sometimes|in:father,mother,guardian,grandparent,sibling,other',
             'is_primary' => 'boolean',
             'can_pickup' => 'boolean',
@@ -128,20 +156,21 @@ class StudentGuardianController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Si se marca como principal, quitar el flag de otros
-        if ($request->has('is_primary') && $request->is_primary) {
+        if (isset($validated['is_primary']) && $validated['is_primary']) {
             StudentGuardian::where('student_id', $relation->student_id)
                 ->where('id', '!=', $id)
                 ->update(['is_primary' => false]);
         }
 
-        $relation->update($request->only([
-            'relationship', 'is_primary', 'can_pickup', 'emergency_contact', 'phone', 'status',
-        ]));
+        $relation->update([
+            'relationship' => $validated['relationship'] ?? $relation->relationship,
+            'is_primary' => $validated['is_primary'] ?? $relation->is_primary,
+            'can_pickup' => $validated['can_pickup'] ?? $relation->can_pickup,
+            'emergency_contact' => $validated['emergency_contact'] ?? $relation->emergency_contact,
+            'phone' => array_key_exists('phone', $validated) ? $validated['phone'] : $relation->phone,
+            'status' => $validated['status'] ?? $relation->status,
+        ]);
         $relation->load(['guardian', 'student']);
 
         return $this->sendResponse($relation, 'Relación actualizada exitosamente');
@@ -158,6 +187,8 @@ class StudentGuardianController extends Controller
             return $this->sendError('Relación no encontrada');
         }
 
+        $this->authorize('delete', $relation);
+
         $relation->delete();
 
         return $this->sendResponse(null, 'Relación eliminada exitosamente');
@@ -168,6 +199,8 @@ class StudentGuardianController extends Controller
      */
     public function studentsByGuardian(int $guardianId): JsonResponse
     {
+        $this->authorize('viewStudentsByGuardian', [StudentGuardian::class, $guardianId]);
+
         $guardian = User::find($guardianId);
 
         if (is_null($guardian) || ! $guardian->hasRole('guardian')) {
@@ -189,6 +222,8 @@ class StudentGuardianController extends Controller
      */
     public function guardiansByStudent(int $studentId): JsonResponse
     {
+        $this->authorize('viewGuardiansByStudent', [StudentGuardian::class, $studentId]);
+
         $student = User::find($studentId);
 
         if (is_null($student) || ! $student->hasRole('student')) {
@@ -205,17 +240,7 @@ class StudentGuardianController extends Controller
      */
     public function studentInfo(int $studentId): JsonResponse
     {
-        $guardianId = Auth::id();
-
-        // Verificar que el representante tenga acceso a este estudiante
-        $hasAccess = StudentGuardian::where('guardian_id', $guardianId)
-            ->where('student_id', $studentId)
-            ->where('status', true)
-            ->exists();
-
-        if (! $hasAccess && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return $this->sendError('No tienes acceso a la información de este estudiante', [], 403);
-        }
+        $this->authorize('viewStudentInfo', [StudentGuardian::class, $studentId]);
 
         $student = User::with([
             'enrollments' => function ($q) {

@@ -7,7 +7,7 @@ use App\Models\SubjectAssignment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class SubjectAssignmentController extends Controller
 {
@@ -17,6 +17,28 @@ class SubjectAssignmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = SubjectAssignment::with(['teacher', 'subject', 'section.grade', 'academicPeriod']);
+
+        $user = Auth::user();
+
+        // Los estudiantes solo ven las asignaciones de su sección
+        if ($user->hasRole('student')) {
+            $enrollment = $user->activeEnrollment();
+            $query->where('section_id', $enrollment?->section_id);
+        }
+
+        // Los representantes solo ven las asignaciones de sus estudiantes vinculados
+        if ($user->hasRole('guardian')) {
+            $studentIds = $user->students()->pluck('users.id');
+            $sectionIds = \App\Models\Enrollment::whereIn('student_id', $studentIds)
+                ->where('status', 'active')
+                ->pluck('section_id');
+            $query->whereIn('section_id', $sectionIds);
+        }
+
+        // Los profesores solo ven sus propias asignaciones
+        if ($user->hasRole('teacher')) {
+            $query->where('teacher_id', $user->id);
+        }
 
         // Filtrar por período académico
         if ($request->has('academic_period_id')) {
@@ -48,7 +70,7 @@ class SubjectAssignmentController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'teacher_id' => 'required|exists:users,id',
             'subject_id' => 'required|exists:subjects,id',
             'section_id' => 'required|exists:sections,id',
@@ -56,12 +78,10 @@ class SubjectAssignmentController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $this->authorize('create', SubjectAssignment::class);
 
         // Verificar que el usuario tenga rol de profesor
-        $teacher = User::find($request->teacher_id);
+        $teacher = User::find($validated['teacher_id']);
         if (! $teacher->hasRole('teacher')) {
             return $this->sendError(
                 'El usuario seleccionado no tiene rol de profesor',
@@ -71,9 +91,9 @@ class SubjectAssignmentController extends Controller
         }
 
         // Verificar que no exista la misma asignación
-        $exists = SubjectAssignment::where('subject_id', $request->subject_id)
-            ->where('section_id', $request->section_id)
-            ->where('academic_period_id', $request->academic_period_id)
+        $exists = SubjectAssignment::where('subject_id', $validated['subject_id'])
+            ->where('section_id', $validated['section_id'])
+            ->where('academic_period_id', $validated['academic_period_id'])
             ->exists();
 
         if ($exists) {
@@ -84,9 +104,7 @@ class SubjectAssignmentController extends Controller
             );
         }
 
-        $assignment = SubjectAssignment::create($request->only([
-            'teacher_id', 'subject_id', 'section_id', 'academic_period_id', 'status',
-        ]));
+        $assignment = SubjectAssignment::create($validated);
         $assignment->load(['teacher', 'subject', 'section.grade', 'academicPeriod']);
 
         return $this->sendResponse($assignment, 'Asignación creada exitosamente', 201);
@@ -104,6 +122,8 @@ class SubjectAssignmentController extends Controller
             return $this->sendError('Asignación no encontrada');
         }
 
+        $this->authorize('view', $assignment);
+
         return $this->sendResponse($assignment, 'Asignación obtenida exitosamente');
     }
 
@@ -118,18 +138,16 @@ class SubjectAssignmentController extends Controller
             return $this->sendError('Asignación no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('update', $assignment);
+
+        $validated = $request->validate([
             'teacher_id' => 'sometimes|exists:users,id',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Si se cambia el profesor, verificar que tenga rol de profesor
-        if ($request->has('teacher_id')) {
-            $teacher = User::find($request->teacher_id);
+        if (isset($validated['teacher_id'])) {
+            $teacher = User::find($validated['teacher_id']);
             if (! $teacher->hasRole('teacher')) {
                 return $this->sendError(
                     'El usuario seleccionado no tiene rol de profesor',
@@ -139,7 +157,7 @@ class SubjectAssignmentController extends Controller
             }
         }
 
-        $assignment->update($request->only(['teacher_id', 'status']));
+        $assignment->update($validated);
         $assignment->load(['teacher', 'subject', 'section.grade', 'academicPeriod']);
 
         return $this->sendResponse($assignment, 'Asignación actualizada exitosamente');
@@ -155,6 +173,8 @@ class SubjectAssignmentController extends Controller
         if (is_null($assignment)) {
             return $this->sendError('Asignación no encontrada');
         }
+
+        $this->authorize('delete', $assignment);
 
         // Verificar si tiene tareas o calificaciones
         if ($assignment->tasks()->exists() || $assignment->studentScores()->exists()) {
@@ -175,6 +195,8 @@ class SubjectAssignmentController extends Controller
      */
     public function byTeacher(int $teacherId): JsonResponse
     {
+        $this->authorize('viewByTeacher', [SubjectAssignment::class, $teacherId]);
+
         $assignments = SubjectAssignment::with(['subject', 'section.grade.educationLevel', 'academicPeriod'])
             ->where('teacher_id', $teacherId)
             ->where('status', true)
@@ -193,6 +215,8 @@ class SubjectAssignmentController extends Controller
         if (is_null($assignment)) {
             return $this->sendError('Asignación no encontrada');
         }
+
+        $this->authorize('viewStudents', $assignment);
 
         $students = $assignment->section->enrollments()
             ->with('student')

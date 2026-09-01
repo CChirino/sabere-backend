@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\AcademicPeriod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class AcademicPeriodController extends Controller
 {
@@ -35,7 +34,7 @@ class AcademicPeriodController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:10',
             'school_year' => 'required|string|size:9|regex:/^\d{4}-\d{4}$/',
@@ -46,13 +45,9 @@ class AcademicPeriodController extends Controller
             'school_year.regex' => 'El formato del año escolar debe ser AAAA-AAAA (ej: 2024-2025)',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar que no exista un período con el mismo código en el mismo año escolar
-        $exists = AcademicPeriod::where('code', $request->code)
-            ->where('school_year', $request->school_year)
+        $exists = AcademicPeriod::where('code', $validated['code'])
+            ->where('school_year', $validated['school_year'])
             ->exists();
 
         if ($exists) {
@@ -63,9 +58,7 @@ class AcademicPeriodController extends Controller
             );
         }
 
-        $period = AcademicPeriod::create($request->only([
-            'name', 'code', 'school_year', 'start_date', 'end_date', 'status',
-        ]));
+        $period = AcademicPeriod::create($validated);
 
         return $this->sendResponse($period, 'Período académico creado exitosamente', 201);
     }
@@ -95,7 +88,7 @@ class AcademicPeriodController extends Controller
             return $this->sendError('Período académico no encontrado');
         }
 
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:10',
             'school_year' => 'required|string|size:9|regex:/^\d{4}-\d{4}$/',
@@ -106,13 +99,9 @@ class AcademicPeriodController extends Controller
             'school_year.regex' => 'El formato del año escolar debe ser AAAA-AAAA (ej: 2024-2025)',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar que no exista otro período con el mismo código en el mismo año escolar
-        $exists = AcademicPeriod::where('code', $request->code)
-            ->where('school_year', $request->school_year)
+        $exists = AcademicPeriod::where('code', $validated['code'])
+            ->where('school_year', $validated['school_year'])
             ->where('id', '!=', $id)
             ->exists();
 
@@ -124,9 +113,7 @@ class AcademicPeriodController extends Controller
             );
         }
 
-        $period->update($request->only([
-            'name', 'code', 'school_year', 'start_date', 'end_date', 'status',
-        ]));
+        $period->update($validated);
 
         return $this->sendResponse($period, 'Período académico actualizado exitosamente');
     }

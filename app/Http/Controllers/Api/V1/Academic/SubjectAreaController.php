@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\SubjectArea;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class SubjectAreaController extends Controller
 {
@@ -25,18 +24,14 @@ class SubjectAreaController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:10|unique:subject_areas,code',
             'description' => 'nullable|string',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        $subjectArea = SubjectArea::create($request->only(['name', 'code', 'description', 'status']));
+        $subjectArea = SubjectArea::create($validated);
 
         return $this->sendResponse($subjectArea, 'Área de conocimiento creada exitosamente', 201);
     }
@@ -66,18 +61,14 @@ class SubjectAreaController extends Controller
             return $this->sendError('Área de conocimiento no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:10|unique:subject_areas,code,'.$id,
             'description' => 'nullable|string',
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        $subjectArea->update($request->only(['name', 'code', 'description', 'status']));
+        $subjectArea->update($validated);
 
         return $this->sendResponse($subjectArea, 'Área de conocimiento actualizada exitosamente');
     }

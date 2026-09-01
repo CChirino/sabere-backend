@@ -10,7 +10,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 
 class StudentScoreController extends Controller
 {
@@ -26,6 +25,26 @@ class StudentScoreController extends Controller
             'term',
             'gradedBy',
         ]);
+
+        $user = Auth::user();
+
+        // Los estudiantes solo ven sus propias calificaciones
+        if ($user->hasRole('student')) {
+            $query->where('student_id', $user->id);
+        }
+
+        // Los representantes solo ven las de sus estudiantes vinculados
+        if ($user->hasRole('guardian')) {
+            $studentIds = $user->students()->pluck('users.id');
+            $query->whereIn('student_id', $studentIds);
+        }
+
+        // Los profesores solo ven las de sus asignaciones
+        if ($user->hasRole('teacher')) {
+            $query->whereHas('subjectAssignment', function ($q) use ($user) {
+                $q->where('teacher_id', $user->id);
+            });
+        }
 
         // Filtrar por estudiante
         if ($request->has('student_id')) {
@@ -59,7 +78,7 @@ class StudentScoreController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'student_id' => 'required|exists:users,id',
             'subject_assignment_id' => 'required|exists:subject_assignments,id',
             'term_id' => 'required|exists:terms,id',
@@ -68,30 +87,21 @@ class StudentScoreController extends Controller
             'is_final' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $student = User::findOrFail($validated['student_id']);
+        $assignment = SubjectAssignment::findOrFail($validated['subject_assignment_id']);
 
         // Verificar que el estudiante tenga rol de estudiante
-        $student = User::find($request->student_id);
         if (! $student->hasRole('student')) {
             return $this->sendError('El usuario no es un estudiante', [], 422);
         }
 
-        // Verificar permisos (solo el profesor de la materia o admin)
-        $assignment = SubjectAssignment::find($request->subject_assignment_id);
-        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return $this->sendError(
-                'No tienes permiso para registrar calificaciones en esta materia',
-                [],
-                403
-            );
-        }
+        // Autorizar creación para la asignación específica
+        $this->authorize('create', [StudentScore::class, $assignment]);
 
         // Verificar que no exista ya una calificación
-        $exists = StudentScore::where('student_id', $request->student_id)
-            ->where('subject_assignment_id', $request->subject_assignment_id)
-            ->where('term_id', $request->term_id)
+        $exists = StudentScore::where('student_id', $validated['student_id'])
+            ->where('subject_assignment_id', $validated['subject_assignment_id'])
+            ->where('term_id', $validated['term_id'])
             ->exists();
 
         if ($exists) {
@@ -103,14 +113,14 @@ class StudentScoreController extends Controller
         }
 
         $score = StudentScore::create([
-            'student_id' => $request->student_id,
-            'subject_assignment_id' => $request->subject_assignment_id,
-            'term_id' => $request->term_id,
-            'score' => $request->score,
-            'observations' => $request->observations,
+            'student_id' => $validated['student_id'],
+            'subject_assignment_id' => $validated['subject_assignment_id'],
+            'term_id' => $validated['term_id'],
+            'score' => $validated['score'],
+            'observations' => $validated['observations'] ?? null,
             'graded_by' => Auth::id(),
             'graded_at' => now(),
-            'is_final' => $request->is_final ?? false,
+            'is_final' => $validated['is_final'] ?? false,
         ]);
 
         $score->load(['student', 'subjectAssignment.subject', 'term', 'gradedBy']);
@@ -135,6 +145,8 @@ class StudentScoreController extends Controller
             return $this->sendError('Calificación no encontrada');
         }
 
+        $this->authorize('view', $score);
+
         return $this->sendResponse($score, 'Calificación obtenida exitosamente');
     }
 
@@ -149,27 +161,15 @@ class StudentScoreController extends Controller
             return $this->sendError('Calificación no encontrada');
         }
 
-        // Verificar permisos
-        $assignment = $score->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return $this->sendError(
-                'No tienes permiso para modificar esta calificación',
-                [],
-                403
-            );
-        }
+        $this->authorize('update', $score);
 
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'score' => 'sometimes|numeric|min:0|max:20',
             'observations' => 'nullable|string',
             'is_final' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        $score->update($request->only(['score', 'observations', 'is_final']));
+        $score->update($validated);
         $score->load(['student', 'subjectAssignment.subject', 'term', 'gradedBy']);
 
         return $this->sendResponse($score, 'Calificación actualizada exitosamente');
@@ -186,15 +186,7 @@ class StudentScoreController extends Controller
             return $this->sendError('Calificación no encontrada');
         }
 
-        // Verificar permisos
-        $assignment = $score->subjectAssignment;
-        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director'])) {
-            return $this->sendError(
-                'No tienes permiso para eliminar esta calificación',
-                [],
-                403
-            );
-        }
+        $this->authorize('delete', $score);
 
         $score->delete();
 
@@ -206,6 +198,8 @@ class StudentScoreController extends Controller
      */
     public function reportCard(int $studentId, int $termId): JsonResponse
     {
+        $this->authorize('reportCard', [StudentScore::class, $studentId]);
+
         $student = User::find($studentId);
 
         if (is_null($student) || ! $student->hasRole('student')) {
@@ -244,6 +238,8 @@ class StudentScoreController extends Controller
      */
     public function byStudent(int $studentId): JsonResponse
     {
+        $this->authorize('viewByStudent', [StudentScore::class, $studentId]);
+
         $scores = StudentScore::with([
             'subjectAssignment.subject',
             'term.academicPeriod',
@@ -261,7 +257,7 @@ class StudentScoreController extends Controller
      */
     public function bulkStore(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'subject_assignment_id' => 'required|exists:subject_assignments,id',
             'term_id' => 'required|exists:terms,id',
             'scores' => 'required|array|min:1',
@@ -270,28 +266,26 @@ class StudentScoreController extends Controller
             'scores.*.observations' => 'nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $assignment = SubjectAssignment::findOrFail($validated['subject_assignment_id']);
 
-        // Verificar permisos
-        $assignment = SubjectAssignment::find($request->subject_assignment_id);
-        if (Auth::id() !== $assignment->teacher_id && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return $this->sendError(
-                'No tienes permiso para registrar calificaciones en esta materia',
-                [],
-                403
-            );
-        }
+        // Autorizar creación para la asignación específica
+        $this->authorize('create', [StudentScore::class, $assignment]);
 
         $created = [];
         $errors = [];
 
-        foreach ($request->scores as $scoreData) {
+        foreach ($validated['scores'] as $scoreData) {
+            $student = User::findOrFail($scoreData['student_id']);
+            if (! $student->hasRole('student')) {
+                $errors[] = "El usuario ID {$scoreData['student_id']} no es un estudiante";
+
+                continue;
+            }
+
             // Verificar si ya existe
             $exists = StudentScore::where('student_id', $scoreData['student_id'])
-                ->where('subject_assignment_id', $request->subject_assignment_id)
-                ->where('term_id', $request->term_id)
+                ->where('subject_assignment_id', $validated['subject_assignment_id'])
+                ->where('term_id', $validated['term_id'])
                 ->exists();
 
             if ($exists) {
@@ -302,8 +296,8 @@ class StudentScoreController extends Controller
 
             $score = StudentScore::create([
                 'student_id' => $scoreData['student_id'],
-                'subject_assignment_id' => $request->subject_assignment_id,
-                'term_id' => $request->term_id,
+                'subject_assignment_id' => $validated['subject_assignment_id'],
+                'term_id' => $validated['term_id'],
                 'score' => $scoreData['score'],
                 'observations' => $scoreData['observations'] ?? null,
                 'graded_by' => Auth::id(),

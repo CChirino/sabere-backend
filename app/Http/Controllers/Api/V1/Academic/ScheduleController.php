@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Api\V1\Academic;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Section;
-use App\Models\SubjectAssignment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class ScheduleController extends Controller
 {
@@ -23,6 +22,34 @@ class ScheduleController extends Controller
             'subjectAssignment.teacher',
             'subjectAssignment.section.grade',
         ]);
+
+        $user = Auth::user();
+
+        // Los estudiantes solo ven el horario de su sección
+        if ($user->hasRole('student')) {
+            $enrollment = $user->activeEnrollment();
+            $query->whereHas('subjectAssignment', function ($q) use ($enrollment) {
+                $q->where('section_id', $enrollment?->section_id);
+            });
+        }
+
+        // Los representantes solo ven el horario de sus estudiantes vinculados
+        if ($user->hasRole('guardian')) {
+            $studentIds = $user->students()->pluck('users.id');
+            $sectionIds = \App\Models\Enrollment::whereIn('student_id', $studentIds)
+                ->where('status', 'active')
+                ->pluck('section_id');
+            $query->whereHas('subjectAssignment', function ($q) use ($sectionIds) {
+                $q->whereIn('section_id', $sectionIds);
+            });
+        }
+
+        // Los profesores solo ven sus propios horarios
+        if ($user->hasRole('teacher')) {
+            $query->whereHas('subjectAssignment', function ($q) use ($user) {
+                $q->where('teacher_id', $user->id);
+            });
+        }
 
         // Filtrar por asignación de materia
         if ($request->has('subject_assignment_id')) {
@@ -67,7 +94,7 @@ class ScheduleController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'subject_assignment_id' => 'required|exists:subject_assignments,id',
             'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday',
             'start_time' => 'required|date_format:H:i',
@@ -77,18 +104,16 @@ class ScheduleController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $this->authorize('create', Schedule::class);
 
-        $assignment = SubjectAssignment::find($request->subject_assignment_id);
+        $assignment = \App\Models\SubjectAssignment::findOrFail($validated['subject_assignment_id']);
 
         // Verificar conflicto en la sección
         if (Schedule::hasConflict(
-            $request->subject_assignment_id,
-            $request->day_of_week,
-            $request->start_time,
-            $request->end_time
+            $validated['subject_assignment_id'],
+            $validated['day_of_week'],
+            $validated['start_time'],
+            $validated['end_time']
         )) {
             return $this->sendError(
                 'Ya existe un horario en este día y hora para esta sección',
@@ -100,9 +125,9 @@ class ScheduleController extends Controller
         // Verificar conflicto del profesor
         if (Schedule::teacherHasConflict(
             $assignment->teacher_id,
-            $request->day_of_week,
-            $request->start_time,
-            $request->end_time,
+            $validated['day_of_week'],
+            $validated['start_time'],
+            $validated['end_time'],
             $assignment->academic_period_id
         )) {
             return $this->sendError(
@@ -112,9 +137,15 @@ class ScheduleController extends Controller
             );
         }
 
-        $schedule = Schedule::create($request->only([
-            'subject_assignment_id', 'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status',
-        ]));
+        $schedule = Schedule::create([
+            'subject_assignment_id' => $validated['subject_assignment_id'],
+            'day_of_week' => $validated['day_of_week'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'classroom' => $validated['classroom'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => $validated['status'] ?? true,
+        ]);
         $schedule->load([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
@@ -139,6 +170,8 @@ class ScheduleController extends Controller
             return $this->sendError('Horario no encontrado');
         }
 
+        $this->authorize('view', $schedule);
+
         return $this->sendResponse($schedule, 'Horario obtenido exitosamente');
     }
 
@@ -153,7 +186,9 @@ class ScheduleController extends Controller
             return $this->sendError('Horario no encontrado');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('update', $schedule);
+
+        $validated = $request->validate([
             'day_of_week' => 'sometimes|in:monday,tuesday,wednesday,thursday,friday,saturday',
             'start_time' => 'sometimes|date_format:H:i',
             'end_time' => 'sometimes|date_format:H:i|after:start_time',
@@ -162,13 +197,9 @@ class ScheduleController extends Controller
             'status' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
-        $dayOfWeek = $request->day_of_week ?? $schedule->day_of_week;
-        $startTime = $request->start_time ?? $schedule->start_time->format('H:i');
-        $endTime = $request->end_time ?? $schedule->end_time->format('H:i');
+        $dayOfWeek = $validated['day_of_week'] ?? $schedule->day_of_week;
+        $startTime = $validated['start_time'] ?? $schedule->start_time->format('H:i');
+        $endTime = $validated['end_time'] ?? $schedule->end_time->format('H:i');
 
         // Verificar conflicto en la sección
         if (Schedule::hasConflict(
@@ -202,9 +233,7 @@ class ScheduleController extends Controller
             );
         }
 
-        $schedule->update($request->only([
-            'day_of_week', 'start_time', 'end_time', 'classroom', 'notes', 'status',
-        ]));
+        $schedule->update($validated);
         $schedule->load([
             'subjectAssignment.subject',
             'subjectAssignment.teacher',
@@ -225,6 +254,8 @@ class ScheduleController extends Controller
             return $this->sendError('Horario no encontrado');
         }
 
+        $this->authorize('delete', $schedule);
+
         $schedule->delete();
 
         return $this->sendResponse(null, 'Horario eliminado exitosamente');
@@ -235,6 +266,8 @@ class ScheduleController extends Controller
      */
     public function bySection(int $sectionId): JsonResponse
     {
+        $this->authorize('viewBySection', [Schedule::class, $sectionId]);
+
         $section = Section::find($sectionId);
 
         if (is_null($section)) {
@@ -271,6 +304,8 @@ class ScheduleController extends Controller
      */
     public function byTeacher(int $teacherId): JsonResponse
     {
+        $this->authorize('viewByTeacher', [Schedule::class, $teacherId]);
+
         $teacher = User::find($teacherId);
 
         if (is_null($teacher) || ! $teacher->hasRole('teacher')) {
@@ -310,6 +345,8 @@ class ScheduleController extends Controller
      */
     public function byStudent(int $studentId): JsonResponse
     {
+        $this->authorize('viewByStudent', [Schedule::class, $studentId]);
+
         $student = User::find($studentId);
 
         if (is_null($student) || ! $student->hasRole('student')) {
@@ -330,6 +367,8 @@ class ScheduleController extends Controller
      */
     public function todayBySection(int $sectionId): JsonResponse
     {
+        $this->authorize('viewBySection', [Schedule::class, $sectionId]);
+
         $section = Section::find($sectionId);
 
         if (is_null($section)) {

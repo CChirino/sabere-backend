@@ -8,7 +8,7 @@ use App\Models\Section;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class EnrollmentController extends Controller
 {
@@ -18,6 +18,25 @@ class EnrollmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Enrollment::with(['student', 'section.grade.educationLevel', 'academicPeriod']);
+
+        $user = Auth::user();
+
+        // Los estudiantes solo ven sus propias inscripciones
+        if ($user->hasRole('student')) {
+            $query->where('student_id', $user->id);
+        }
+
+        // Los representantes solo ven las de sus estudiantes vinculados
+        if ($user->hasRole('guardian')) {
+            $studentIds = $user->students()->pluck('users.id');
+            $query->whereIn('student_id', $studentIds);
+        }
+
+        // Los profesores solo ven las de sus secciones asignadas
+        if ($user->hasRole('teacher')) {
+            $sectionIds = $user->subjectAssignments()->pluck('section_id');
+            $query->whereIn('section_id', $sectionIds);
+        }
 
         // Filtrar por período académico
         if ($request->has('academic_period_id')) {
@@ -49,7 +68,7 @@ class EnrollmentController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'student_id' => 'required|exists:users,id',
             'section_id' => 'required|exists:sections,id',
             'academic_period_id' => 'required|exists:academic_periods,id',
@@ -58,12 +77,10 @@ class EnrollmentController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
+        $this->authorize('create', Enrollment::class);
 
         // Verificar que el usuario tenga rol de estudiante
-        $student = User::find($request->student_id);
+        $student = User::find($validated['student_id']);
         if (! $student->hasRole('student')) {
             return $this->sendError(
                 'El usuario seleccionado no tiene rol de estudiante',
@@ -73,8 +90,8 @@ class EnrollmentController extends Controller
         }
 
         // Verificar que no exista una inscripción activa para el mismo período
-        $exists = Enrollment::where('student_id', $request->student_id)
-            ->where('academic_period_id', $request->academic_period_id)
+        $exists = Enrollment::where('student_id', $validated['student_id'])
+            ->where('academic_period_id', $validated['academic_period_id'])
             ->exists();
 
         if ($exists) {
@@ -86,9 +103,9 @@ class EnrollmentController extends Controller
         }
 
         // Verificar capacidad de la sección
-        $section = Section::find($request->section_id);
+        $section = Section::find($validated['section_id']);
         if ($section->capacity) {
-            $currentCount = Enrollment::where('section_id', $request->section_id)
+            $currentCount = Enrollment::where('section_id', $validated['section_id'])
                 ->where('status', 'active')
                 ->count();
 
@@ -101,9 +118,14 @@ class EnrollmentController extends Controller
             }
         }
 
-        $enrollment = Enrollment::create($request->only([
-            'student_id', 'section_id', 'academic_period_id', 'enrollment_date', 'status', 'notes',
-        ]));
+        $enrollment = Enrollment::create([
+            'student_id' => $validated['student_id'],
+            'section_id' => $validated['section_id'],
+            'academic_period_id' => $validated['academic_period_id'],
+            'enrollment_date' => $validated['enrollment_date'],
+            'status' => $validated['status'] ?? 'active',
+            'notes' => $validated['notes'] ?? null,
+        ]);
         $enrollment->load(['student', 'section.grade.educationLevel', 'academicPeriod']);
 
         return $this->sendResponse($enrollment, 'Inscripción creada exitosamente', 201);
@@ -121,6 +143,8 @@ class EnrollmentController extends Controller
             return $this->sendError('Inscripción no encontrada');
         }
 
+        $this->authorize('view', $enrollment);
+
         return $this->sendResponse($enrollment, 'Inscripción obtenida exitosamente');
     }
 
@@ -135,21 +159,19 @@ class EnrollmentController extends Controller
             return $this->sendError('Inscripción no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('update', $enrollment);
+
+        $validated = $request->validate([
             'section_id' => 'sometimes|exists:sections,id',
             'status' => 'sometimes|in:active,inactive,transferred,graduated,withdrawn',
             'notes' => 'nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Si se cambia de sección, verificar capacidad
-        if ($request->has('section_id') && $request->section_id != $enrollment->section_id) {
-            $section = Section::find($request->section_id);
+        if (isset($validated['section_id']) && $validated['section_id'] != $enrollment->section_id) {
+            $section = Section::find($validated['section_id']);
             if ($section->capacity) {
-                $currentCount = Enrollment::where('section_id', $request->section_id)
+                $currentCount = Enrollment::where('section_id', $validated['section_id'])
                     ->where('status', 'active')
                     ->count();
 
@@ -163,7 +185,11 @@ class EnrollmentController extends Controller
             }
         }
 
-        $enrollment->update($request->only(['section_id', 'status', 'notes']));
+        $enrollment->update([
+            'section_id' => $validated['section_id'] ?? $enrollment->section_id,
+            'status' => $validated['status'] ?? $enrollment->status,
+            'notes' => array_key_exists('notes', $validated) ? $validated['notes'] : $enrollment->notes,
+        ]);
         $enrollment->load(['student', 'section.grade.educationLevel', 'academicPeriod']);
 
         return $this->sendResponse($enrollment, 'Inscripción actualizada exitosamente');
@@ -180,6 +206,8 @@ class EnrollmentController extends Controller
             return $this->sendError('Inscripción no encontrada');
         }
 
+        $this->authorize('delete', $enrollment);
+
         $enrollment->delete();
 
         return $this->sendResponse(null, 'Inscripción eliminada exitosamente');
@@ -190,6 +218,8 @@ class EnrollmentController extends Controller
      */
     public function byStudent(int $studentId): JsonResponse
     {
+        $this->authorize('viewByStudent', [Enrollment::class, $studentId]);
+
         $enrollments = Enrollment::with(['section.grade.educationLevel', 'academicPeriod'])
             ->where('student_id', $studentId)
             ->orderBy('enrollment_date', 'desc')
@@ -209,19 +239,17 @@ class EnrollmentController extends Controller
             return $this->sendError('Inscripción no encontrada');
         }
 
-        $validator = Validator::make($request->all(), [
+        $this->authorize('transfer', $enrollment);
+
+        $validated = $request->validate([
             'new_section_id' => 'required|exists:sections,id',
             'notes' => 'nullable|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->sendError('Error de validación', $validator->errors(), 422);
-        }
-
         // Verificar capacidad de la nueva sección
-        $newSection = Section::find($request->new_section_id);
+        $newSection = Section::find($validated['new_section_id']);
         if ($newSection->capacity) {
-            $currentCount = Enrollment::where('section_id', $request->new_section_id)
+            $currentCount = Enrollment::where('section_id', $validated['new_section_id'])
                 ->where('status', 'active')
                 ->count();
 
@@ -235,8 +263,8 @@ class EnrollmentController extends Controller
         }
 
         $enrollment->update([
-            'section_id' => $request->new_section_id,
-            'notes' => $request->notes ?? $enrollment->notes,
+            'section_id' => $validated['new_section_id'],
+            'notes' => $validated['notes'] ?? $enrollment->notes,
         ]);
 
         $enrollment->load(['student', 'section.grade.educationLevel', 'academicPeriod']);
