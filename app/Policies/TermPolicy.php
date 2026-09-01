@@ -31,4 +31,9 @@ class TermPolicy
     {
         return $this->isStaff($user);
     }
+
+    public function close(User $user): bool
+    {
+        return $this->isStaff($user);
+    }
 }

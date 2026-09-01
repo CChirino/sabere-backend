@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Academic\AcademicPeriodClosingController;
 use App\Http\Controllers\Api\V1\Academic\AcademicPeriodController;
 use App\Http\Controllers\Api\V1\Academic\EducationLevelController;
 use App\Http\Controllers\Api\V1\Academic\EnrollmentController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Api\V1\Academic\EvaluationPlanController;
 use App\Http\Controllers\Api\V1\Academic\EventController;
 use App\Http\Controllers\Api\V1\Academic\GradeController;
 use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
+use App\Http\Controllers\Api\V1\Academic\RecoveryRegistrationController;
 use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\SectionController;
 use App\Http\Controllers\Api\V1\Academic\StudentEvaluationScoreController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\Api\V1\Academic\SubjectAssignmentController;
 use App\Http\Controllers\Api\V1\Academic\SubjectController;
 use App\Http\Controllers\Api\V1\Academic\TaskController;
 use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
+use App\Http\Controllers\Api\V1\Academic\TermClosingController;
 use App\Http\Controllers\Api\V1\Academic\TermController;
 use Illuminate\Support\Facades\Route;
 
@@ -94,6 +97,13 @@ Route::prefix('v1')->group(function () {
     Route::put('student-scores/{id}', [StudentScoreController::class, 'update']);
     Route::delete('student-scores/{id}', [StudentScoreController::class, 'destroy']);
     Route::post('student-scores/bulk', [StudentScoreController::class, 'bulkStore']);
+
+    // Cierre de lapsos y períodos
+    Route::post('terms/{id}/close', [TermClosingController::class, 'close']);
+    Route::post('academic-periods/{id}/close', [AcademicPeriodClosingController::class, 'close']);
+
+    // Promociones y reparaciones
+    Route::post('recovery-registrations/{id}/grade', [RecoveryRegistrationController::class, 'grade']);
 
     // Planes de evaluación (escritura)
     Route::post('evaluation-plans', [EvaluationPlanController::class, 'store']);

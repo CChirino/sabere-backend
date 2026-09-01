@@ -7,10 +7,12 @@ use App\Http\Controllers\Api\V1\Academic\EvaluationPlanController;
 use App\Http\Controllers\Api\V1\Academic\EventController;
 use App\Http\Controllers\Api\V1\Academic\GradeController;
 use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
+use App\Http\Controllers\Api\V1\Academic\RecoveryRegistrationController;
 use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\SectionController;
 use App\Http\Controllers\Api\V1\Academic\StudentEvaluationScoreController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
+use App\Http\Controllers\Api\V1\Academic\StudentPromotionController;
 use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
 use App\Http\Controllers\Api\V1\Academic\SubjectAreaController;
 use App\Http\Controllers\Api\V1\Academic\SubjectAssignmentController;
@@ -106,6 +108,12 @@ Route::prefix('v1')->group(function () {
     // Notas por ítem (solo lectura)
     Route::get('student-evaluation-scores', [StudentEvaluationScoreController::class, 'index']);
     Route::get('student-evaluation-scores/{id}', [StudentEvaluationScoreController::class, 'show']);
+
+    // Promociones y reparaciones (solo lectura)
+    Route::get('student-promotions', [StudentPromotionController::class, 'index']);
+    Route::get('student-promotions/{id}', [StudentPromotionController::class, 'show']);
+    Route::get('recovery-registrations', [RecoveryRegistrationController::class, 'index']);
+    Route::get('recovery-registrations/{id}', [RecoveryRegistrationController::class, 'show']);
 
     // Representantes-Estudiantes (solo lectura)
     Route::get('student-guardians', [StudentGuardianController::class, 'index']);

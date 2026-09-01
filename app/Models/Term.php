@@ -18,16 +18,20 @@ class Term extends Model
         'number',
         'start_date',
         'end_date',
+        'closing_date',
         'weight',
         'status',
+        'is_closed',
     ];
 
     protected $casts = [
         'number' => 'integer',
         'start_date' => 'date',
         'end_date' => 'date',
+        'closing_date' => 'date',
         'weight' => 'decimal:2',
         'status' => 'boolean',
+        'is_closed' => 'boolean',
     ];
 
     public function academicPeriod(): BelongsTo
