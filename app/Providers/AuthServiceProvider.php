@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Models\AcademicPeriod;
 use App\Models\EducationLevel;
 use App\Models\Enrollment;
+use App\Models\EvaluationPlan;
 use App\Models\Grade;
 use App\Models\Schedule;
 use App\Models\Section;
+use App\Models\StudentEvaluationScore;
 use App\Models\StudentGuardian;
 use App\Models\StudentScore;
 use App\Models\Subject;
@@ -19,9 +21,11 @@ use App\Models\Term;
 use App\Policies\AcademicPeriodPolicy;
 use App\Policies\EducationLevelPolicy;
 use App\Policies\EnrollmentPolicy;
+use App\Policies\EvaluationPlanPolicy;
 use App\Policies\GradePolicy;
 use App\Policies\SchedulePolicy;
 use App\Policies\SectionPolicy;
+use App\Policies\StudentEvaluationScorePolicy;
 use App\Policies\StudentGuardianPolicy;
 use App\Policies\StudentScorePolicy;
 use App\Policies\SubjectAreaPolicy;
@@ -38,9 +42,11 @@ class AuthServiceProvider extends ServiceProvider
         AcademicPeriod::class => AcademicPeriodPolicy::class,
         EducationLevel::class => EducationLevelPolicy::class,
         Enrollment::class => EnrollmentPolicy::class,
+        EvaluationPlan::class => EvaluationPlanPolicy::class,
         Grade::class => GradePolicy::class,
         Schedule::class => SchedulePolicy::class,
         Section::class => SectionPolicy::class,
+        StudentEvaluationScore::class => StudentEvaluationScorePolicy::class,
         StudentGuardian::class => StudentGuardianPolicy::class,
         StudentScore::class => StudentScorePolicy::class,
         Subject::class => SubjectPolicy::class,

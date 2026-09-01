@@ -3,11 +3,13 @@
 use App\Http\Controllers\Api\V1\Academic\AcademicPeriodController;
 use App\Http\Controllers\Api\V1\Academic\EducationLevelController;
 use App\Http\Controllers\Api\V1\Academic\EnrollmentController;
+use App\Http\Controllers\Api\V1\Academic\EvaluationPlanController;
 use App\Http\Controllers\Api\V1\Academic\EventController;
 use App\Http\Controllers\Api\V1\Academic\GradeController;
 use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
 use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\SectionController;
+use App\Http\Controllers\Api\V1\Academic\StudentEvaluationScoreController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
 use App\Http\Controllers\Api\V1\Academic\SubjectAreaController;
@@ -96,6 +98,14 @@ Route::prefix('v1')->group(function () {
     // Notas Manuales (solo lectura)
     Route::get('manual-scores', [ManualScoreController::class, 'index']);
     Route::get('manual-scores/{id}', [ManualScoreController::class, 'show']);
+
+    // Planes de evaluación (solo lectura)
+    Route::get('evaluation-plans', [EvaluationPlanController::class, 'index']);
+    Route::get('evaluation-plans/{id}', [EvaluationPlanController::class, 'show']);
+
+    // Notas por ítem (solo lectura)
+    Route::get('student-evaluation-scores', [StudentEvaluationScoreController::class, 'index']);
+    Route::get('student-evaluation-scores/{id}', [StudentEvaluationScoreController::class, 'show']);
 
     // Representantes-Estudiantes (solo lectura)
     Route::get('student-guardians', [StudentGuardianController::class, 'index']);

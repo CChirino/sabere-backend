@@ -3,11 +3,13 @@
 use App\Http\Controllers\Api\V1\Academic\AcademicPeriodController;
 use App\Http\Controllers\Api\V1\Academic\EducationLevelController;
 use App\Http\Controllers\Api\V1\Academic\EnrollmentController;
+use App\Http\Controllers\Api\V1\Academic\EvaluationPlanController;
 use App\Http\Controllers\Api\V1\Academic\EventController;
 use App\Http\Controllers\Api\V1\Academic\GradeController;
 use App\Http\Controllers\Api\V1\Academic\ManualScoreController;
 use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\SectionController;
+use App\Http\Controllers\Api\V1\Academic\StudentEvaluationScoreController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
 use App\Http\Controllers\Api\V1\Academic\SubjectAreaController;
@@ -92,6 +94,20 @@ Route::prefix('v1')->group(function () {
     Route::put('student-scores/{id}', [StudentScoreController::class, 'update']);
     Route::delete('student-scores/{id}', [StudentScoreController::class, 'destroy']);
     Route::post('student-scores/bulk', [StudentScoreController::class, 'bulkStore']);
+
+    // Planes de evaluación (escritura)
+    Route::post('evaluation-plans', [EvaluationPlanController::class, 'store']);
+    Route::put('evaluation-plans/{id}', [EvaluationPlanController::class, 'update']);
+    Route::delete('evaluation-plans/{id}', [EvaluationPlanController::class, 'destroy']);
+    Route::post('evaluation-plans/{id}/submit', [EvaluationPlanController::class, 'submit']);
+    Route::post('evaluation-plans/{id}/approve', [EvaluationPlanController::class, 'approve']);
+    Route::post('evaluation-plans/{id}/reject', [EvaluationPlanController::class, 'reject']);
+    Route::post('evaluation-plans/{id}/recalculate', [EvaluationPlanController::class, 'recalculate']);
+
+    // Notas por ítem (escritura)
+    Route::post('student-evaluation-scores', [StudentEvaluationScoreController::class, 'store']);
+    Route::put('student-evaluation-scores/{id}', [StudentEvaluationScoreController::class, 'update']);
+    Route::delete('student-evaluation-scores/{id}', [StudentEvaluationScoreController::class, 'destroy']);
 
     // Notas Manuales (escritura)
     Route::post('manual-scores', [ManualScoreController::class, 'store']);
