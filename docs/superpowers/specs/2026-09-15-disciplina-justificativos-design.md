@@ -93,7 +93,6 @@ Registrar incidencias disciplinarias de los estudiantes clasificadas por graveda
 - `id`
 - `student_id` (FK users)
 - `guardian_id` (FK users)
-- `attendance_id` (FK attendances, nullable)
 - `academic_period_id` (FK academic_periods)
 - `start_date` (date)
 - `end_date` (date)
