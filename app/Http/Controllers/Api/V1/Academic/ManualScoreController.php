@@ -35,16 +35,16 @@ class ManualScoreController extends Controller
         $assignment = SubjectAssignment::find($validated['subject_assignment_id']);
 
         if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return response()->json(['message' => 'No tienes permiso para agregar notas a esta materia'], 403);
+            return $this->sendError('No tienes permiso para agregar notas a esta materia', [], 403);
         }
 
         if ($validated['score'] > $validated['max_score']) {
-            return response()->json(['message' => 'La nota no puede ser mayor al máximo permitido'], 422);
+            return $this->sendError('La nota no puede ser mayor al máximo permitido', [], 422);
         }
 
         $score = app(ManualScoreService::class)->create($validated);
 
-        return response()->json(['data' => $score], 201);
+        return $this->sendResponse($score, 'Nota manual creada exitosamente', 201);
     }
 
     public function show(int $id): JsonResponse
@@ -52,10 +52,10 @@ class ManualScoreController extends Controller
         $score = ManualScore::with(['student', 'subjectAssignment.subject', 'term', 'gradedBy'])->find($id);
 
         if (! $score) {
-            return response()->json(['message' => 'Nota manual no encontrada'], 404);
+            return $this->sendError('Nota manual no encontrada');
         }
 
-        return response()->json(['data' => $score]);
+        return $this->sendResponse($score, 'Nota manual obtenida exitosamente');
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -63,13 +63,13 @@ class ManualScoreController extends Controller
         $score = ManualScore::find($id);
 
         if (! $score) {
-            return response()->json(['message' => 'Nota manual no encontrada'], 404);
+            return $this->sendError('Nota manual no encontrada');
         }
 
         $assignment = $score->subjectAssignment;
 
         if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return response()->json(['message' => 'No tienes permiso para modificar esta nota'], 403);
+            return $this->sendError('No tienes permiso para modificar esta nota', [], 403);
         }
 
         $validated = $request->validate([
@@ -83,12 +83,12 @@ class ManualScoreController extends Controller
         $newMaxScore = $validated['max_score'] ?? $score->max_score;
 
         if ($newScore > $newMaxScore) {
-            return response()->json(['message' => 'La nota no puede ser mayor al máximo permitido'], 422);
+            return $this->sendError('La nota no puede ser mayor al máximo permitido', [], 422);
         }
 
         $score = app(ManualScoreService::class)->update($score, $validated);
 
-        return response()->json(['data' => $score]);
+        return $this->sendResponse($score, 'Nota manual actualizada exitosamente');
     }
 
     public function destroy(int $id): JsonResponse
@@ -96,18 +96,18 @@ class ManualScoreController extends Controller
         $score = ManualScore::find($id);
 
         if (! $score) {
-            return response()->json(['message' => 'Nota manual no encontrada'], 404);
+            return $this->sendError('Nota manual no encontrada');
         }
 
         $assignment = $score->subjectAssignment;
 
         if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return response()->json(['message' => 'No tienes permiso para eliminar esta nota'], 403);
+            return $this->sendError('No tienes permiso para eliminar esta nota', [], 403);
         }
 
         app(ManualScoreService::class)->destroy($score);
 
-        return response()->json(['message' => 'Nota manual eliminada exitosamente']);
+        return $this->sendResponse(null, 'Nota manual eliminada exitosamente');
     }
 
     public function storeBulk(Request $request): JsonResponse
@@ -126,11 +126,11 @@ class ManualScoreController extends Controller
         $assignment = SubjectAssignment::find($validated['subject_assignment_id']);
 
         if ($assignment->teacher_id !== Auth::id() && ! Auth::user()->hasAnyRole(['admin', 'director', 'coordinator'])) {
-            return response()->json(['message' => 'No tienes permiso para agregar notas a esta materia'], 403);
+            return $this->sendError('No tienes permiso para agregar notas a esta materia', [], 403);
         }
 
         $created = app(ManualScoreService::class)->bulkCreate($validated);
 
-        return response()->json(['data' => ['created' => $created]], 201);
+        return $this->sendResponse(['created' => $created], 'Notas manuales creadas exitosamente', 201);
     }
 }
