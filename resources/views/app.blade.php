@@ -42,6 +42,10 @@
     <body class="font-sans antialiased">
         @inertia
 
+        <script>
+            window.VAPID_PUBLIC_KEY = '{{ config('services.vapid.public_key') }}';
+        </script>
+
         <!-- Register Service Worker -->
         <script>
             if ('serviceWorker' in navigator) {

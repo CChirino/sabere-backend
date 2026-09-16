@@ -47,6 +47,13 @@ const navigation = computed<NavItem[]>(() => [
         icon: 'home',
         show: true,
     },
+    {
+        name: 'Mensajes',
+        href: route('messages.index'),
+        routeName: 'messages.*',
+        icon: 'chat',
+        show: true,
+    },
     // Admin / Director
     {
         name: 'Usuarios',
@@ -253,6 +260,30 @@ const navigation = computed<NavItem[]>(() => [
         routeName: 'circulars.*',
         icon: 'bell',
         show: true,
+    },
+    // Disciplina
+    {
+        name: 'Disciplina',
+        href: route('discipline.index'),
+        routeName: 'discipline.*',
+        icon: 'exclamation-circle',
+        show: hasRole(['admin', 'director', 'coordinator', 'teacher', 'student']),
+    },
+    // Justificativos
+    {
+        name: 'Justificativos',
+        href: route('justifications.index'),
+        routeName: 'justifications.*',
+        icon: 'document-text',
+        show: hasRole(['admin', 'director', 'coordinator', 'guardian']),
+    },
+    // Indicadores - Staff
+    {
+        name: 'Indicadores',
+        href: route('indicators.index'),
+        routeName: 'indicators.index',
+        icon: 'chart-bar',
+        show: hasRole(['admin', 'director', 'coordinator']),
     },
     // Ayuda - Todos
     {

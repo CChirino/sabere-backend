@@ -51,6 +51,7 @@ class RoleSeeder extends Seeder
             'view sections', 'create sections', 'edit sections', 'delete sections',
             'view enrollments', 'create enrollments', 'edit enrollments',
             'view reports', 'export reports',
+            'view settings', 'edit settings',
         ];
         $director->syncPermissions(
             array_filter($directorPermissions, fn ($p) => Permission::where('name', $p)->exists())

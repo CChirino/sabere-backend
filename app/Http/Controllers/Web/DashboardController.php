@@ -29,6 +29,13 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function indicators(): Response
+    {
+        return Inertia::render('Dashboard/Indicators', [
+            'academicPeriods' => AcademicPeriod::orderBy('start_date', 'desc')->get(),
+        ]);
+    }
+
     private function getDashboardData(User $user): array
     {
         $currentPeriod = AcademicPeriod::where('status', true)

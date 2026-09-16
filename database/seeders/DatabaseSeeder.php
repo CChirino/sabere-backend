@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             SubjectSeeder::class,
             GradeSubjectSeeder::class,
             TermSeeder::class,
+            SettingSeeder::class,
             DemoSeeder::class,
         ]);
     }

@@ -105,6 +105,12 @@ class PermissionSeeder extends Seeder
             'delete academic_periods',
         ];
 
+        // Permisos para configuración institucional
+        $settingPermissions = [
+            'view settings',
+            'edit settings',
+        ];
+
         // Combinar todos los permisos
         $allPermissions = array_merge(
             $userPermissions,
@@ -118,7 +124,8 @@ class PermissionSeeder extends Seeder
             $taskPermissions,
             $submissionPermissions,
             $reportPermissions,
-            $academicPeriodPermissions
+            $academicPeriodPermissions,
+            $settingPermissions
         );
 
         // Crear permisos

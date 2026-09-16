@@ -82,6 +82,38 @@ class User extends Authenticatable implements MustVerifyEmail
             ->dontSubmitEmptyLogs();
     }
 
+    /**
+     * Suscripciones push del usuario.
+     */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
+     * Perfil integral del estudiante.
+     */
+    public function studentProfile()
+    {
+        return $this->hasOne(StudentProfile::class);
+    }
+
+    /**
+     * Documentos de la ficha del estudiante.
+     */
+    public function studentDocuments(): HasMany
+    {
+        return $this->hasMany(StudentDocument::class);
+    }
+
+    /**
+     * Preferencias de notificación del usuario.
+     */
+    public function notificationPreference()
+    {
+        return $this->hasOne(UserNotificationPreference::class);
+    }
+
     // ==================== RELACIONES ESTUDIANTE ====================
 
     /**

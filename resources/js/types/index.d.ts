@@ -320,3 +320,29 @@ export interface HelpSuggestion {
     reviewer?: User;
     created_at: string;
 }
+
+export interface DirectMessage {
+    id: number;
+    sender_id: number;
+    recipient_id: number;
+    sender?: User;
+    recipient?: User;
+    subject: string | null;
+    body: string;
+    read_at: string | null;
+    created_at: string;
+    attachment_path?: string | null;
+    attachment_name?: string | null;
+}
+
+export interface Setting {
+    id: number;
+    group: string;
+    key: string;
+    value: any;
+    type: string;
+    is_public: boolean;
+    description?: string;
+    created_at?: string;
+    updated_at?: string;
+}

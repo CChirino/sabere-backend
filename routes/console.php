@@ -36,3 +36,5 @@ Artisan::command('events:send-reminders', function () {
 })->purpose('Enviar recordatorios por email de eventos que ocurren mañana');
 
 Schedule::command('events:send-reminders')->dailyAt('08:00');
+Schedule::command('db:backup')->dailyAt('02:00');
+Schedule::command('db:backup-clean')->weeklyOn(0, '03:00');

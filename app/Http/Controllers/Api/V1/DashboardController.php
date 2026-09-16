@@ -12,7 +12,9 @@ use App\Models\Task;
 use App\Models\TaskSubmission;
 use App\Models\Term;
 use App\Models\User;
+use App\Services\DashboardMetricService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -363,6 +365,17 @@ class DashboardController extends Controller
         ];
 
         return $this->sendResponse($data, 'Dashboard de representante');
+    }
+
+    /**
+     * Indicadores operativos del período académico.
+     */
+    public function indicators(Request $request): JsonResponse
+    {
+        $academicPeriodId = $request->input('academic_period_id');
+        $data = app(DashboardMetricService::class)->all($academicPeriodId ? (int) $academicPeriodId : null);
+
+        return $this->sendResponse($data, 'Indicadores del dashboard');
     }
 
     /**

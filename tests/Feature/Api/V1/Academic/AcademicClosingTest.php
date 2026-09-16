@@ -41,14 +41,24 @@ class AcademicClosingTest extends TestCase
         $coordinator = $this->createUser('coordinator');
         $period = AcademicPeriod::factory()->create();
 
-        $term1 = Term::factory()->create([
+        $term1 = Term::create([
             'academic_period_id' => $period->id,
+            'name' => 'Primer Lapso',
+            'number' => 1,
+            'start_date' => now()->subMonths(3),
+            'end_date' => now()->subMonths(2),
             'weight' => 40,
+            'status' => true,
         ]);
 
-        $term2 = Term::factory()->create([
+        $term2 = Term::create([
             'academic_period_id' => $period->id,
+            'name' => 'Segundo Lapso',
+            'number' => 2,
+            'start_date' => now()->subMonths(1),
+            'end_date' => now(),
             'weight' => 60,
+            'status' => true,
         ]);
 
         $section = Section::factory()->create();

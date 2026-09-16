@@ -1,6 +1,7 @@
 const CACHE_NAME = 'sabere-v1';
 const STATIC_CACHE = 'sabere-static-v1';
 const DYNAMIC_CACHE = 'sabere-dynamic-v1';
+const OFFLINE_QUEUE_KEY = 'sabere-offline-queue';
 
 // Archivos estáticos para cachear
 const STATIC_ASSETS = [
@@ -9,6 +10,8 @@ const STATIC_ASSETS = [
     '/manifest.json',
     '/icons/icon-192x192.png',
     '/icons/icon-512x512.png',
+    '/icons/icon-72x72.png',
+    '/build/manifest.json',
 ];
 
 // Instalar Service Worker
@@ -50,13 +53,14 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Ignorar peticiones que no sean GET
-    if (request.method !== 'GET') {
+    // Ignorar peticiones a APIs externas
+    if (!url.origin.includes(self.location.origin)) {
         return;
     }
 
-    // Ignorar peticiones a APIs externas
-    if (!url.origin.includes(self.location.origin)) {
+    // Para peticiones de escritura, intentar network y guardar en cola si falla
+    if (request.method !== 'GET') {
+        event.respondWith(handleMutation(request));
         return;
     }
 
@@ -121,17 +125,59 @@ async function networkFirst(request) {
     }
 }
 
-// Manejar notificaciones push (para futuro uso)
+// Manejar mutaciones POST/PUT/DELETE offline
+async function handleMutation(request) {
+    try {
+        return await fetch(request);
+    } catch (error) {
+        const clone = request.clone();
+        const payload = await clone.text();
+
+        const queueEntry = {
+            url: request.url,
+            method: request.method,
+            headers: Array.from(request.headers.entries()),
+            body: payload,
+            timestamp: Date.now(),
+        };
+
+        const queue = await getOfflineQueue();
+        queue.push(queueEntry);
+        await saveOfflineQueue(queue);
+
+        return new Response(JSON.stringify({ queued: true }), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+}
+
+async function getOfflineQueue() {
+    const allClients = await self.clients.matchAll({ type: 'window' });
+    if (allClients.length > 0) {
+        // En una implementación completa se usaría IndexedDB
+        return JSON.parse(localStorage?.getItem(OFFLINE_QUEUE_KEY) || '[]');
+    }
+    return [];
+}
+
+async function saveOfflineQueue(queue) {
+    // Stub: en la implementación completa se persistiría en IndexedDB
+    console.log('[SW] Queued offline action:', queue);
+}
+
+// Manejar notificaciones push
 self.addEventListener('push', (event) => {
     const data = event.data?.json() || {};
     const title = data.title || 'Saberé';
     const options = {
         body: data.body || 'Tienes una nueva notificación',
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-72x72.png',
+        icon: data.icon || '/icons/icon-192x192.png',
+        badge: data.badge || '/icons/icon-72x72.png',
         vibrate: [100, 50, 100],
         data: {
             url: data.url || '/',
+            type: data.type || 'notification',
         },
     };
 
@@ -144,7 +190,7 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const url = event.notification.data?.url || '/';
-    
+
     event.waitUntil(
         clients.matchAll({ type: 'window' }).then((clientList) => {
             for (const client of clientList) {

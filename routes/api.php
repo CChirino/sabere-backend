@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Academic\DocumentController;
 use App\Http\Controllers\Api\V1\Academic\ScheduleController;
 use App\Http\Controllers\Api\V1\Academic\StudentGuardianController;
 use App\Http\Controllers\Api\V1\Academic\StudentScoreController;
@@ -7,10 +8,18 @@ use App\Http\Controllers\Api\V1\Academic\TaskController;
 use App\Http\Controllers\Api\V1\Academic\TaskSubmissionController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
+use App\Http\Controllers\Api\V1\AdmissionController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\Auth\SocialAuthController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DirectMessageController;
+use App\Http\Controllers\Api\V1\DisciplinaryRecordController;
+use App\Http\Controllers\Api\V1\IncidentTypeController;
+use App\Http\Controllers\Api\V1\JustificationController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
+use App\Http\Controllers\Api\V1\StudentProfileController;
 use App\Http\Controllers\Web\Teacher\AttendanceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +34,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/login/google', [SocialAuthController::class, 'redirectToGoogle'])->middleware('throttle:5,1');
     Route::get('/login/google/callback', [SocialAuthController::class, 'handleGoogleCallback'])->middleware('throttle:5,1');
 
+    // Verificación pública de documentos
+    Route::get('/documents/verify/{hash}', [DocumentController::class, 'verify'])->name('documents.verify');
+
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [LoginController::class, 'logout']);
@@ -35,6 +47,53 @@ Route::prefix('v1')->group(function () {
                 'user' => $request->user(),
             ]);
         });
+
+        // Push notifications
+        Route::post('push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+        Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+        Route::get('notification-preferences', [NotificationPreferenceController::class, 'index'])->name('notification-preferences.index');
+        Route::put('notification-preferences', [NotificationPreferenceController::class, 'update'])->name('notification-preferences.update');
+
+        // Mensajería directa
+        Route::get('messages', [DirectMessageController::class, 'index'])->name('api.messages.index');
+        Route::get('messages/sent', [DirectMessageController::class, 'sent'])->name('api.messages.sent');
+        Route::get('messages/recipients', [DirectMessageController::class, 'recipients'])->name('api.messages.recipients');
+        Route::get('messages/unread-count', [DirectMessageController::class, 'unreadCount'])->name('api.messages.unread-count');
+        Route::get('messages/{message}', [DirectMessageController::class, 'show'])->name('api.messages.show');
+        Route::post('messages', [DirectMessageController::class, 'store'])->name('api.messages.store');
+        Route::post('messages/{message}/read', [DirectMessageController::class, 'markAsRead'])->name('api.messages.read');
+
+        // Admisiones
+        Route::get('admissions', [AdmissionController::class, 'index'])->name('api.admissions.index');
+        Route::post('admissions', [AdmissionController::class, 'store'])->name('api.admissions.store');
+        Route::get('admissions/{admission}', [AdmissionController::class, 'show'])->name('api.admissions.show');
+        Route::put('admissions/{admission}', [AdmissionController::class, 'update'])->name('api.admissions.update');
+        Route::post('admissions/{admission}/approve', [AdmissionController::class, 'approve'])->name('api.admissions.approve');
+        Route::post('admissions/{admission}/reject', [AdmissionController::class, 'reject'])->name('api.admissions.reject');
+        Route::get('admissions/{admission}/suggest-sections', [AdmissionController::class, 'suggestSections'])->name('api.admissions.suggest-sections');
+
+        // Ficha integral
+        Route::get('students/{student}/profile', [StudentProfileController::class, 'show'])->name('api.students.profile.show');
+        Route::put('students/{student}/profile', [StudentProfileController::class, 'update'])->name('api.students.profile.update');
+        Route::post('students/{student}/documents', [StudentProfileController::class, 'storeDocument'])->name('api.students.documents.store');
+        Route::delete('students/{student}/documents/{document}', [StudentProfileController::class, 'destroyDocument'])->name('api.students.documents.destroy');
+        Route::post('students/{student}/documents/{document}/verify', [StudentProfileController::class, 'verifyDocument'])->name('api.students.documents.verify');
+
+        // Disciplina
+        Route::get('incident-types', [IncidentTypeController::class, 'index'])->name('api.incident-types.index');
+        Route::get('disciplinary-records', [DisciplinaryRecordController::class, 'index'])->name('api.disciplinary-records.index');
+        Route::post('disciplinary-records', [DisciplinaryRecordController::class, 'store'])->name('api.disciplinary-records.store');
+        Route::get('disciplinary-records/{disciplinaryRecord}', [DisciplinaryRecordController::class, 'show'])->name('api.disciplinary-records.show');
+        Route::put('disciplinary-records/{disciplinaryRecord}', [DisciplinaryRecordController::class, 'update'])->name('api.disciplinary-records.update');
+        Route::delete('disciplinary-records/{disciplinaryRecord}', [DisciplinaryRecordController::class, 'destroy'])->name('api.disciplinary-records.destroy');
+
+        // Justificativos
+        Route::get('justifications', [JustificationController::class, 'index'])->name('api.justifications.index');
+        Route::post('justifications', [JustificationController::class, 'store'])->name('api.justifications.store');
+        Route::get('justifications/{justification}', [JustificationController::class, 'show'])->name('api.justifications.show');
+        Route::post('justifications/{justification}/approve', [JustificationController::class, 'approve'])->name('api.justifications.approve');
+        Route::post('justifications/{justification}/reject', [JustificationController::class, 'reject'])->name('api.justifications.reject');
+        Route::delete('justifications/{justification}', [JustificationController::class, 'destroy'])->name('api.justifications.destroy');
     });
 });
 
@@ -46,6 +105,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     // Dashboard - accesible para todos los usuarios autenticados
     Route::get('v1/dashboard', [DashboardController::class, 'index']);
+
+    // Indicadores - solo staff
+    Route::get('v1/dashboard/indicators', [DashboardController::class, 'indicators'])
+        ->name('api.dashboard.indicators')
+        ->middleware('role:admin|director|coordinator');
 
     // Rutas de administración (solo para admin y director)
     Route::prefix('v1/admin')->middleware(['role:admin|director'])->group(function () {

@@ -13,13 +13,19 @@ use App\Http\Controllers\Web\Admin\CircularController;
 use App\Http\Controllers\Web\Admin\EventController;
 use App\Http\Controllers\Web\Admin\HelpController as AdminHelpController;
 use App\Http\Controllers\Web\Admin\ReenrollmentController as AdminReenrollmentController;
+use App\Http\Controllers\Web\Admin\SettingController;
 use App\Http\Controllers\Web\Admin\UserController;
+use App\Http\Controllers\Web\AdmissionController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\DisciplineController;
 use App\Http\Controllers\Web\HelpController;
+use App\Http\Controllers\Web\JustificationController;
+use App\Http\Controllers\Web\MessagesController;
 use App\Http\Controllers\Web\Student\CircularController as StudentCircularController;
 use App\Http\Controllers\Web\Student\ReenrollmentController as StudentReenrollmentController;
 use App\Http\Controllers\Web\Student\SectionChatController;
 use App\Http\Controllers\Web\Student\SyllabusController as StudentSyllabusController;
+use App\Http\Controllers\Web\StudentProfileController;
 use App\Http\Controllers\Web\Teacher\AttendanceController;
 use App\Http\Controllers\Web\Teacher\ScoreController;
 use App\Http\Controllers\Web\Teacher\SectionChatController as TeacherSectionChatController;
@@ -33,6 +39,9 @@ Route::redirect('/', '/login');
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/indicators', [DashboardController::class, 'indicators'])
+        ->name('indicators.index')
+        ->middleware('role:admin|director|coordinator');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -86,6 +95,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/events', [EventController::class, 'store'])->name('events.store');
         Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
         Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+        // Configuración institucional
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     });
 
     // Academic routes
@@ -240,6 +253,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/students/{id}/tasks/{taskId}', fn ($id, $taskId) => Inertia::render('Guardian/StudentTaskShow', ['studentId' => (int) $id, 'taskId' => (int) $taskId]))->name('students.tasks.show');
         Route::get('/students/{id}/schedule', fn ($id) => Inertia::render('Guardian/StudentSchedule', ['studentId' => (int) $id]))->name('students.schedule');
     });
+
+    // Mensajería directa
+    Route::get('/messages', [MessagesController::class, 'index'])->name('messages.index');
+    Route::get('/messages/compose', [MessagesController::class, 'create'])->name('messages.create');
+    Route::get('/messages/{message}', [MessagesController::class, 'show'])->name('messages.show');
+
+    // Admisiones
+    Route::get('/admissions', [AdmissionController::class, 'index'])->name('admissions.index');
+    Route::get('/admissions/create', [AdmissionController::class, 'create'])->name('admissions.create');
+    Route::get('/admissions/{admission}', [AdmissionController::class, 'show'])->name('admissions.show');
+
+    // Ficha integral
+    Route::get('/students/{student}/profile', [StudentProfileController::class, 'show'])->name('students.profile.show');
+    Route::get('/students/{student}/profile/edit', [StudentProfileController::class, 'edit'])->name('students.profile.edit');
+
+    // Disciplina
+    Route::get('/discipline', [DisciplineController::class, 'index'])->name('discipline.index');
+    Route::get('/discipline/create', [DisciplineController::class, 'create'])->name('discipline.create');
+    Route::get('/discipline/{record}', [DisciplineController::class, 'show'])->name('discipline.show');
+
+    // Justificativos
+    Route::get('/justifications', [JustificationController::class, 'index'])->name('justifications.index');
+    Route::get('/justifications/create', [JustificationController::class, 'create'])->name('justifications.create');
+    Route::get('/justifications/{justification}', [JustificationController::class, 'show'])->name('justifications.show');
+    Route::get('/justifications/{justification}/review', [JustificationController::class, 'review'])->name('justifications.review');
 });
 
 require __DIR__.'/auth.php';

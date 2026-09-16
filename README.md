@@ -1,61 +1,87 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sabere — Sistema de Gestión Escolar (Venezuela)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicación web para la administración académica de colegios en Venezuela. Desarrollada con **Laravel 12**, **Inertia.js**, **Vue 3**, **TypeScript**, **Vite**, **Tailwind CSS** y **MySQL**. Incluye PWA, notificaciones en tiempo real mediante **Laravel Reverb** y autenticación con roles usando **Spatie Permission**.
 
-## About Laravel
+## Requisitos
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3+
+- Composer
+- Node.js 22+
+- MySQL 8
+- Docker y Docker Compose (opcional, recomendado via Laravel Sail)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Instalación rápida
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+# Clonar el repositorio
+git clone <repo>
+cd sabere-backend
 
-## Learning Laravel
+# Instalar dependencias
+composer install
+npm install
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+# Entorno
+cp .env.example .env
+php artisan key:generate
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+# Base de datos (con Sail)
+docker exec sabere-backend-sabere.test-1 php artisan migrate
+docker exec sabere-backend-sabere.test-1 php artisan db:seed
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Comandos de desarrollo
 
-## Laravel Sponsors
+```bash
+# Iniciar entorno completo (Docker/Sail)
+composer dev
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# O individualmente
+php artisan serve          # http://localhost:5500
+npm run dev                # Vite dev server
+php artisan queue:listen --tries=1
+php artisan reverb:start   # WebSockets
 
-### Premium Partners
+# Build de producción
+npm run build
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# Tests
+composer test              # php artisan test
+php artisan test --filter=Authorization
 
-## Contributing
+# Lint / formato
+./vendor/bin/pint
+npx vue-tsc --noEmit
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# E2E
+npm run test:e2e
+```
 
-## Code of Conduct
+## Arquitectura
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- **Rutas duales**:
+  - `routes/web.php` — vistas Inertia (SPA).
+  - `routes/api.php` — API JSON bajo `/api/v1/`.
+- **Controladores**:
+  - Web: `app/Http/Controllers/Web/`
+  - API: `app/Http/Controllers/Api/V1/`
+- **Roles**: `admin`, `director`, `coordinator`, `teacher`, `student`, `guardian`.
+- **Autorización**: Policies de Laravel por recurso + middleware `role:`.
 
-## Security Vulnerabilities
+## Seguridad
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Validación mediante `$request->validated()` en controladores API.
+- Policies para prevención de IDOR (acceso a recursos ajenos).
+- Rate limiting en login, registro y rutas protegidas.
+- Registro público controlado por `ALLOW_PUBLIC_REGISTRATION`.
+- Tokens Sanctum con expiración y prefijo configurables.
 
-## License
+## Convenciones
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Código y UI en español.
+- Tests Feature y Unit en `tests/`.
+- Migrations con nombre basado en fecha.
+
+## Licencia
+
+MIT

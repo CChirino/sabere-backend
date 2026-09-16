@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Academic\AcademicPeriodController;
+use App\Http\Controllers\Api\V1\Academic\DocumentController;
 use App\Http\Controllers\Api\V1\Academic\EducationLevelController;
 use App\Http\Controllers\Api\V1\Academic\EnrollmentController;
 use App\Http\Controllers\Api\V1\Academic\EvaluationPlanController;
@@ -134,4 +135,8 @@ Route::prefix('v1')->group(function () {
     Route::get('events', [EventController::class, 'index']);
     Route::get('events/{id}', [EventController::class, 'show']);
     Route::get('events-upcoming', [EventController::class, 'upcoming']);
+
+    // Documentos académicos
+    Route::get('documents/report-card/{studentId}/{termId}', [DocumentController::class, 'reportCard']);
+    Route::get('documents/study-certificate/{studentId}', [DocumentController::class, 'studyCertificate']);
 });

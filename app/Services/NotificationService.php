@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Jobs\SendNotificationJob;
+use App\Models\DisciplinaryRecord;
 use App\Models\Event;
+use App\Models\Justification;
 use App\Models\Notification;
 use App\Models\Reenrollment;
 use App\Models\StudentScore;
@@ -96,7 +98,8 @@ class NotificationService
                     'term' => $termName,
                     'teacher' => $teacher->name,
                 ],
-                channel: 'both'
+                channel: 'both',
+                pushType: 'score'
             );
 
             // Notificar a representantes
@@ -113,7 +116,8 @@ class NotificationService
                         'term' => $termName,
                         'teacher' => $teacher->name,
                     ],
-                    channel: 'both'
+                    channel: 'both',
+                    pushType: 'score'
                 );
             }
         }
@@ -258,7 +262,8 @@ class NotificationService
                 'grade' => $grade?->name,
                 'section' => $section?->name,
             ],
-            channel: 'both'
+            channel: 'both',
+            pushType: 'reenrollment'
         );
 
         // Notificar a representantes
@@ -276,7 +281,8 @@ class NotificationService
                     'grade' => $grade?->name,
                     'section' => $section?->name,
                 ],
-                channel: 'both'
+                channel: 'both',
+                pushType: 'reenrollment'
             );
         }
     }
@@ -303,7 +309,8 @@ class NotificationService
                 'academic_period' => $academicPeriod?->name,
                 'reason' => $reenrollment->admin_notes,
             ],
-            channel: 'both'
+            channel: 'both',
+            pushType: 'reenrollment'
         );
 
         // Notificar a representantes
@@ -320,7 +327,8 @@ class NotificationService
                     'academic_period' => $academicPeriod?->name,
                     'reason' => $reenrollment->admin_notes,
                 ],
-                channel: 'both'
+                channel: 'both',
+                pushType: 'reenrollment'
             );
         }
     }
@@ -511,8 +519,21 @@ class NotificationService
         string $title,
         string $message,
         array $data = [],
-        string $channel = 'database'
+        string $channel = 'database',
+        ?string $pushType = null,
+        ?string $pushUrl = null
     ): void {
+        if ($pushType === null) {
+            $pushType = match ($type) {
+                'score_assigned', 'score_finalized' => 'score',
+                'task_created', 'task_graded' => 'task',
+                'circular_created' => 'circular',
+                'event_reminder' => 'event',
+                'reenrollment_approved', 'reenrollment_rejected' => 'reenrollment',
+                'direct_message' => 'message',
+                default => null,
+            };
+        }
         $notification = Notification::create([
             'user_id' => $user->id,
             'type' => $type,
@@ -526,5 +547,137 @@ class NotificationService
         if (in_array($channel, ['email', 'both'])) {
             SendNotificationJob::dispatch($notification);
         }
+
+        // Enviar push si aplica
+        if ($pushType) {
+            app(WebPushService::class)->sendToUser($user, $pushType, $title, $message, $pushUrl ?? '/dashboard');
+        }
+    }
+
+    /**
+     * Notificar a estudiante y representantes sobre una nueva incidencia disciplinaria.
+     */
+    public static function notifyDisciplinaryRecord(DisciplinaryRecord $record): void
+    {
+        $student = $record->student;
+        $incidentType = $record->incidentType?->name ?? 'Incidencia disciplinaria';
+
+        if (! $student) {
+            return;
+        }
+
+        $title = 'Nueva incidencia disciplinaria';
+        $message = "Se ha registrado una incidencia de tipo {$incidentType} ({$record->severity})";
+        $pushType = $record->severity === 'grave' ? 'discipline' : null;
+
+        self::createNotification(
+            user: $student,
+            type: 'disciplinary_record',
+            title: $title,
+            message: $message,
+            data: [
+                'record_id' => $record->id,
+                'severity' => $record->severity,
+                'incident_type' => $incidentType,
+            ],
+            channel: 'both',
+            pushType: $pushType,
+            pushUrl: route('discipline.show', $record)
+        );
+
+        foreach ($student->guardians as $guardian) {
+            self::createNotification(
+                user: $guardian,
+                type: 'disciplinary_record',
+                title: $title,
+                message: $message,
+                data: [
+                    'record_id' => $record->id,
+                    'student_id' => $student->id,
+                    'student_name' => $student->name,
+                    'severity' => $record->severity,
+                    'incident_type' => $incidentType,
+                ],
+                channel: 'both',
+                pushType: $pushType,
+                pushUrl: route('discipline.show', $record)
+            );
+        }
+    }
+
+    /**
+     * Notificar sobre creación o aprobación de un justificativo.
+     */
+    public static function notifyJustification(Justification $justification, string $event = 'submitted'): void
+    {
+        $student = $justification->student;
+        $guardian = $justification->guardian;
+
+        if (! $student || ! $guardian) {
+            return;
+        }
+
+        if ($event === 'submitted') {
+            // Notificar al staff con permiso para revisar
+            $staff = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['admin', 'director', 'coordinator']))->get();
+            foreach ($staff as $member) {
+                self::createNotification(
+                    user: $member,
+                    type: 'justification_submitted',
+                    title: 'Nuevo justificativo de inasistencia',
+                    message: "{$guardian->name} solicitó un justificativo para {$student->name}",
+                    data: [
+                        'justification_id' => $justification->id,
+                        'student_id' => $student->id,
+                        'student_name' => $student->name,
+                        'guardian_id' => $guardian->id,
+                        'guardian_name' => $guardian->name,
+                    ],
+                    channel: 'both',
+                    pushType: 'justification',
+                    pushUrl: route('justifications.review', $justification)
+                );
+            }
+
+            return;
+        }
+
+        if ($event === 'approved') {
+            $title = 'Justificativo aprobado';
+            $message = "El justificativo de {$student->name} ha sido aprobado";
+        } else {
+            $title = 'Justificativo rechazado';
+            $message = "El justificativo de {$student->name} ha sido rechazado";
+        }
+
+        self::createNotification(
+            user: $guardian,
+            type: "justification_{$event}",
+            title: $title,
+            message: $message,
+            data: [
+                'justification_id' => $justification->id,
+                'student_id' => $student->id,
+                'student_name' => $student->name,
+                'status' => $justification->status,
+            ],
+            channel: 'both',
+            pushType: 'justification',
+            pushUrl: route('justifications.show', $justification)
+        );
+
+        self::createNotification(
+            user: $student,
+            type: "justification_{$event}",
+            title: $title,
+            message: $message,
+            data: [
+                'justification_id' => $justification->id,
+                'status' => $justification->status,
+            ],
+            channel: 'both',
+            pushType: 'justification',
+            pushUrl: route('justifications.show', $justification)
+        );
     }
 }
