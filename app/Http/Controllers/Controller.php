@@ -16,7 +16,7 @@ class Controller extends BaseController
      */
     protected function perPage(Request $request, int $default = 15, int $max = 50): int
     {
-        return min($request->integer('per_page', $default), $max);
+        return app(\App\Services\PaginationService::class)->perPage($request, $default, $max);
     }
 
     /**
