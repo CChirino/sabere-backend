@@ -17,9 +17,9 @@ class RoleController extends Controller
         $this->middleware('permission:delete roles')->only(['destroy']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $roles = Role::with('permissions')->get();
+        $roles = Role::with('permissions')->paginate($this->perPage($request));
 
         return response()->json($roles);
     }

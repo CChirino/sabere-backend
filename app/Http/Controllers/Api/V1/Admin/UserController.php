@@ -17,9 +17,9 @@ class UserController extends Controller
         $this->middleware('permission:delete users')->only(['destroy']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('roles')->get();
+        $users = User::with('roles')->paginate($this->perPage($request));
 
         return response()->json($users);
     }

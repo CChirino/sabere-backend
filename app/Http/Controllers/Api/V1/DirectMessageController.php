@@ -18,7 +18,7 @@ class DirectMessageController extends Controller
         $messages = DirectMessage::where('recipient_id', $request->user()->id)
             ->with(['sender'])
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate($this->perPage($request));
 
         return response()->json($messages);
     }
@@ -28,7 +28,7 @@ class DirectMessageController extends Controller
         $messages = DirectMessage::where('sender_id', $request->user()->id)
             ->with(['recipient'])
             ->orderByDesc('created_at')
-            ->paginate(20);
+            ->paginate($this->perPage($request));
 
         return response()->json($messages);
     }
