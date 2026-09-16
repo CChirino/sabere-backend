@@ -5,11 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class Setting extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saved(function (self $setting) {
+            Cache::forget(self::cacheKey($setting->group, $setting->key));
+        });
+
+        static::deleted(function (self $setting) {
+            Cache::forget(self::cacheKey($setting->group, $setting->key));
+        });
+    }
+
+    private static function cacheKey(string $group, string $key): string
+    {
+        return "settings:group:{$group}:key:{$key}";
+    }
 
     protected $fillable = [
         'group',
@@ -77,13 +94,15 @@ class Setting extends Model
     {
         [$group, $key] = self::parseDotKey($dotKey);
 
-        $setting = static::byKey($group, $key)->first();
+        return Cache::rememberForever(self::cacheKey($group, $key), function () use ($group, $key, $default) {
+            $setting = static::byKey($group, $key)->first();
 
-        if (! $setting) {
-            return $default;
-        }
+            if (! $setting) {
+                return $default;
+            }
 
-        return $setting->casted_value;
+            return $setting->casted_value;
+        });
     }
 
     public static function set(string $dotKey, mixed $value, ?string $type = null): self
