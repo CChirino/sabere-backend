@@ -58,9 +58,9 @@ class EnrollmentController extends Controller
             $query->where('student_id', $request->student_id);
         }
 
-        $enrollments = $query->orderBy('enrollment_date', 'desc')->get();
+        $enrollments = $query->orderBy('enrollment_date', 'desc')->paginate($this->perPage($request));
 
-        return $this->sendResponse($enrollments, 'Inscripciones obtenidas exitosamente');
+        return $this->sendPaginatedResponse($enrollments, 'Inscripciones obtenidas exitosamente');
     }
 
     /**

@@ -60,9 +60,9 @@ class SubjectAssignmentController extends Controller
             $query->where('subject_id', $request->subject_id);
         }
 
-        $assignments = $query->get();
+        $assignments = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($assignments, 'Asignaciones obtenidas exitosamente');
+        return $this->sendPaginatedResponse($assignments, 'Asignaciones obtenidas exitosamente');
     }
 
     /**

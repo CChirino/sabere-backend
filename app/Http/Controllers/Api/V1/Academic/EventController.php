@@ -26,9 +26,9 @@ class EventController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $events = $query->orderBy('start_date')->get();
+        $events = $query->orderBy('start_date')->paginate($this->perPage($request));
 
-        return $this->sendResponse(
+        return $this->sendPaginatedResponse(
             EventResource::collection($events),
             'Eventos obtenidos exitosamente'
         );

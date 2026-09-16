@@ -70,7 +70,7 @@ class StudentScoreController extends Controller
         $perPage = min($request->get('per_page', 50), 200); // máx 200 por página
         $scores = $query->orderBy('term_id')->paginate($perPage);
 
-        return $this->sendResponse($scores, 'Calificaciones obtenidas exitosamente');
+        return $this->sendPaginatedResponse($scores, 'Calificaciones obtenidas exitosamente');
     }
 
     /**

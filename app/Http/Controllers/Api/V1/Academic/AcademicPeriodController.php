@@ -24,9 +24,9 @@ class AcademicPeriodController extends Controller
         // Ordenar por fecha de inicio por defecto
         $query->orderBy('start_date');
 
-        $periods = $query->get();
+        $periods = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($periods, 'Períodos académicos obtenidos exitosamente');
+        return $this->sendPaginatedResponse($periods, 'Períodos académicos obtenidos exitosamente');
     }
 
     /**

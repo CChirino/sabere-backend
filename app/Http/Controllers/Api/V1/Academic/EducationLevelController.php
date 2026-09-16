@@ -12,11 +12,11 @@ class EducationLevelController extends Controller
     /**
      * Listar todos los niveles educativos
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $educationLevels = EducationLevel::all();
+        $educationLevels = EducationLevel::query()->paginate($this->perPage($request));
 
-        return $this->sendResponse($educationLevels, 'Niveles educativos obtenidos exitosamente');
+        return $this->sendPaginatedResponse($educationLevels, 'Niveles educativos obtenidos exitosamente');
     }
 
     /**

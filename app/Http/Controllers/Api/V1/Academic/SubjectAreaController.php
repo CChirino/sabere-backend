@@ -12,11 +12,11 @@ class SubjectAreaController extends Controller
     /**
      * Listar todas las áreas de conocimiento
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $subjectAreas = SubjectArea::all();
+        $subjectAreas = SubjectArea::query()->paginate($this->perPage($request));
 
-        return $this->sendResponse($subjectAreas, 'Áreas de conocimiento obtenidas exitosamente');
+        return $this->sendPaginatedResponse($subjectAreas, 'Áreas de conocimiento obtenidas exitosamente');
     }
 
     /**

@@ -73,23 +73,9 @@ class TaskController extends Controller
             });
         }
 
-        // Paginación
-        $perPage = $request->get('per_page', 15);
-        $tasks = $query->orderBy('due_date', 'desc')->paginate($perPage);
+        $tasks = $query->orderBy('due_date', 'desc')->paginate($this->perPage($request));
 
-        return response()->json([
-            'success' => true,
-            'data' => $tasks->items(),
-            'pagination' => [
-                'current_page' => $tasks->currentPage(),
-                'from' => $tasks->firstItem(),
-                'last_page' => $tasks->lastPage(),
-                'per_page' => $tasks->perPage(),
-                'to' => $tasks->lastItem(),
-                'total' => $tasks->total(),
-            ],
-            'message' => 'Tareas obtenidas exitosamente',
-        ]);
+        return $this->sendPaginatedResponse($tasks, 'Tareas obtenidas exitosamente');
     }
 
     /**

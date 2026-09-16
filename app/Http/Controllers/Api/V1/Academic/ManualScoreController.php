@@ -30,9 +30,9 @@ class ManualScoreController extends Controller
             $query->where('student_id', $request->student_id);
         }
 
-        $scores = $query->orderBy('created_at', 'desc')->get();
+        $scores = $query->orderBy('created_at', 'desc')->paginate($this->perPage($request));
 
-        return response()->json(['data' => $scores]);
+        return $this->sendPaginatedResponse($scores, 'Notas manuales obtenidas exitosamente');
     }
 
     /**

@@ -33,9 +33,9 @@ class RecoveryRegistrationController extends Controller
             $query->where('academic_period_id', $request->academic_period_id);
         }
 
-        $registrations = $query->get();
+        $registrations = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($registrations, 'Registros de reparación obtenidos exitosamente');
+        return $this->sendPaginatedResponse($registrations, 'Registros de reparación obtenidos exitosamente');
     }
 
     public function show(int $id): JsonResponse

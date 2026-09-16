@@ -29,9 +29,9 @@ class StudentPromotionController extends Controller
             $query->where('academic_period_id', $request->academic_period_id);
         }
 
-        $promotions = $query->get();
+        $promotions = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($promotions, 'Promociones obtenidas exitosamente');
+        return $this->sendPaginatedResponse($promotions, 'Promociones obtenidas exitosamente');
     }
 
     public function show(int $id): JsonResponse

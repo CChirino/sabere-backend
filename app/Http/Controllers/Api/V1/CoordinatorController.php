@@ -36,7 +36,7 @@ class CoordinatorController extends Controller
             });
         }
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = $this->perPage($request);
         $teachers = $query->orderBy('name')->paginate($perPage);
 
         // Agregar materias únicas a cada profesor
@@ -157,7 +157,7 @@ class CoordinatorController extends Controller
             $query->where('is_published', false);
         }
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = $this->perPage($request);
         $tasks = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Transformar datos
@@ -233,7 +233,7 @@ class CoordinatorController extends Controller
                 'teacher:id,name',
             ]);
 
-        $perPage = $request->get('per_page', 15);
+        $perPage = $this->perPage($request);
         $assignments = $query->paginate($perPage);
 
         // Calcular estadísticas de notas para cada asignación

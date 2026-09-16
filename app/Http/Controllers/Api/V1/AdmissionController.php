@@ -25,7 +25,7 @@ class AdmissionController extends Controller
             $query->where('status', $request->get('status'));
         }
 
-        return response()->json($query->paginate(20));
+        return response()->json($query->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

@@ -62,9 +62,9 @@ class EvaluationPlanController extends Controller
             $query->where('status', $request->status);
         }
 
-        $plans = $query->get();
+        $plans = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($plans, 'Planes de evaluación obtenidos exitosamente');
+        return $this->sendPaginatedResponse($plans, 'Planes de evaluación obtenidos exitosamente');
     }
 
     /**

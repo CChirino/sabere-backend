@@ -58,9 +58,9 @@ class SectionController extends Controller
             });
         }
 
-        $sections = $query->orderBy('name')->get();
+        $sections = $query->orderBy('name')->paginate($this->perPage($request));
 
-        return $this->sendResponse($sections, 'Secciones obtenidas exitosamente');
+        return $this->sendPaginatedResponse($sections, 'Secciones obtenidas exitosamente');
     }
 
     /**

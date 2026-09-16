@@ -39,6 +39,26 @@ class Controller extends BaseController
     }
 
     /**
+     * Return a paginated success response.
+     *
+     * @param  mixed  $paginator
+     * @param  string  $message
+     * @param  int  $code
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sendPaginatedResponse($paginator, $message, $code = 200)
+    {
+        $array = $paginator instanceof \Illuminate\Http\Resources\Json\JsonResource
+            ? $paginator->toArray(request())
+            : $paginator->toArray();
+
+        return response()->json(array_merge($array, [
+            'success' => true,
+            'message' => $message,
+        ]), $code);
+    }
+
+    /**
      * Return error response.
      *
      * @param  string  $error

@@ -42,7 +42,7 @@ class DisciplinaryRecordController extends Controller
             $query->where('student_id', $request->input('student_id'));
         }
 
-        return response()->json($query->paginate(15));
+        return response()->json($query->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

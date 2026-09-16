@@ -55,9 +55,9 @@ class StudentEvaluationScoreController extends Controller
             $query->where('subject_assignment_id', $request->subject_assignment_id);
         }
 
-        $scores = $query->get();
+        $scores = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($scores, 'Notas por ítem obtenidas exitosamente');
+        return $this->sendPaginatedResponse($scores, 'Notas por ítem obtenidas exitosamente');
     }
 
     /**

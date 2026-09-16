@@ -21,9 +21,9 @@ class GradeController extends Controller
             $query->where('education_level_id', $request->education_level_id);
         }
 
-        $grades = $query->get();
+        $grades = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($grades, 'Grados obtenidos exitosamente');
+        return $this->sendPaginatedResponse($grades, 'Grados obtenidos exitosamente');
     }
 
     /**

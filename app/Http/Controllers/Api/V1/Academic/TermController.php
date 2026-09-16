@@ -22,9 +22,9 @@ class TermController extends Controller
             $query->where('academic_period_id', $request->academic_period_id);
         }
 
-        $terms = $query->orderBy('number')->get();
+        $terms = $query->orderBy('number')->paginate($this->perPage($request));
 
-        return $this->sendResponse($terms, 'Lapsos obtenidos exitosamente');
+        return $this->sendPaginatedResponse($terms, 'Lapsos obtenidos exitosamente');
     }
 
     /**

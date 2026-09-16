@@ -84,9 +84,9 @@ class ScheduleController extends Controller
 
         $schedules = $query->orderBy('day_of_week')
             ->orderBy('start_time')
-            ->get();
+            ->paginate($this->perPage($request));
 
-        return $this->sendResponse($schedules, 'Horarios obtenidos exitosamente');
+        return $this->sendPaginatedResponse($schedules, 'Horarios obtenidos exitosamente');
     }
 
     /**

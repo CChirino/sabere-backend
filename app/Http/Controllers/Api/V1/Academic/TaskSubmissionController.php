@@ -53,9 +53,9 @@ class TaskSubmissionController extends Controller
             $query->where('status', $request->status);
         }
 
-        $submissions = $query->orderBy('submitted_at', 'desc')->get();
+        $submissions = $query->orderBy('submitted_at', 'desc')->paginate($this->perPage($request));
 
-        return $this->sendResponse($submissions, 'Entregas obtenidas exitosamente');
+        return $this->sendPaginatedResponse($submissions, 'Entregas obtenidas exitosamente');
     }
 
     /**

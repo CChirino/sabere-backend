@@ -49,9 +49,9 @@ class StudentGuardianController extends Controller
             $query->where('student_id', $request->student_id);
         }
 
-        $relations = $query->get();
+        $relations = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($relations, 'Relaciones obtenidas exitosamente');
+        return $this->sendPaginatedResponse($relations, 'Relaciones obtenidas exitosamente');
     }
 
     /**

@@ -50,9 +50,9 @@ class SubjectController extends Controller
             $query->where('subject_area_id', $request->subject_area_id);
         }
 
-        $subjects = $query->get();
+        $subjects = $query->paginate($this->perPage($request));
 
-        return $this->sendResponse($subjects, 'Materias obtenidas exitosamente');
+        return $this->sendPaginatedResponse($subjects, 'Materias obtenidas exitosamente');
     }
 
     /**
