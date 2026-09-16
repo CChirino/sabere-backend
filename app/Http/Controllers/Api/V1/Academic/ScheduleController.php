@@ -6,92 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Section;
 use App\Models\User;
+use App\Services\ScheduleDataService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ScheduleController extends Controller
 {
-    /**
-     * Listar horarios
-     */
     public function index(Request $request): JsonResponse
     {
-        $query = Schedule::with([
-            'subjectAssignment.subject',
-            'subjectAssignment.teacher',
-            'subjectAssignment.section.grade',
-        ]);
-
-        $user = Auth::user();
-
-        // Los estudiantes solo ven el horario de su sección
-        if ($user->hasRole('student')) {
-            $enrollment = $user->activeEnrollment();
-            $query->whereHas('subjectAssignment', function ($q) use ($enrollment) {
-                $q->where('section_id', $enrollment?->section_id);
-            });
-        }
-
-        // Los representantes solo ven el horario de sus estudiantes vinculados
-        if ($user->hasRole('guardian')) {
-            $studentIds = $user->students()->pluck('users.id');
-            $sectionIds = \App\Models\Enrollment::whereIn('student_id', $studentIds)
-                ->where('status', 'active')
-                ->pluck('section_id');
-            $query->whereHas('subjectAssignment', function ($q) use ($sectionIds) {
-                $q->whereIn('section_id', $sectionIds);
-            });
-        }
-
-        // Los profesores solo ven sus propios horarios
-        if ($user->hasRole('teacher')) {
-            $query->whereHas('subjectAssignment', function ($q) use ($user) {
-                $q->where('teacher_id', $user->id);
-            });
-        }
-
-        // Filtrar por asignación de materia
-        if ($request->has('subject_assignment_id')) {
-            $query->where('subject_assignment_id', $request->subject_assignment_id);
-        }
-
-        // Filtrar por día
-        if ($request->has('day_of_week')) {
-            $query->where('day_of_week', $request->day_of_week);
-        }
-
-        // Filtrar por sección
-        if ($request->has('section_id')) {
-            $query->whereHas('subjectAssignment', function ($q) use ($request) {
-                $q->where('section_id', $request->section_id);
-            });
-        }
-
-        // Filtrar por profesor
-        if ($request->has('teacher_id')) {
-            $query->whereHas('subjectAssignment', function ($q) use ($request) {
-                $q->where('teacher_id', $request->teacher_id);
-            });
-        }
-
-        // Filtrar por período académico
-        if ($request->has('academic_period_id')) {
-            $query->whereHas('subjectAssignment', function ($q) use ($request) {
-                $q->where('academic_period_id', $request->academic_period_id);
-            });
-        }
-
-        $schedules = $query->orderBy('day_of_week')
-            ->orderBy('start_time')
-            ->paginate($this->perPage($request));
+        $schedules = app(ScheduleDataService::class)->index($request);
 
         return $this->sendPaginatedResponse($schedules, 'Horarios obtenidos exitosamente');
     }
 
-    /**
-     * Crear un nuevo horario
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -108,7 +35,6 @@ class ScheduleController extends Controller
 
         $assignment = \App\Models\SubjectAssignment::findOrFail($validated['subject_assignment_id']);
 
-        // Verificar conflicto en la sección
         if (Schedule::hasConflict(
             $validated['subject_assignment_id'],
             $validated['day_of_week'],
@@ -122,7 +48,6 @@ class ScheduleController extends Controller
             );
         }
 
-        // Verificar conflicto del profesor
         if (Schedule::teacherHasConflict(
             $assignment->teacher_id,
             $validated['day_of_week'],
@@ -155,9 +80,6 @@ class ScheduleController extends Controller
         return $this->sendResponse($schedule, 'Horario creado exitosamente', 201);
     }
 
-    /**
-     * Mostrar un horario específico
-     */
     public function show(int $id): JsonResponse
     {
         $schedule = Schedule::with([
@@ -175,9 +97,6 @@ class ScheduleController extends Controller
         return $this->sendResponse($schedule, 'Horario obtenido exitosamente');
     }
 
-    /**
-     * Actualizar un horario
-     */
     public function update(Request $request, int $id): JsonResponse
     {
         $schedule = Schedule::find($id);
@@ -201,7 +120,6 @@ class ScheduleController extends Controller
         $startTime = $validated['start_time'] ?? $schedule->start_time->format('H:i');
         $endTime = $validated['end_time'] ?? $schedule->end_time->format('H:i');
 
-        // Verificar conflicto en la sección
         if (Schedule::hasConflict(
             $schedule->subject_assignment_id,
             $dayOfWeek,
@@ -216,7 +134,6 @@ class ScheduleController extends Controller
             );
         }
 
-        // Verificar conflicto del profesor
         $assignment = $schedule->subjectAssignment;
         if (Schedule::teacherHasConflict(
             $assignment->teacher_id,
@@ -243,9 +160,6 @@ class ScheduleController extends Controller
         return $this->sendResponse($schedule, 'Horario actualizado exitosamente');
     }
 
-    /**
-     * Eliminar un horario
-     */
     public function destroy(int $id): JsonResponse
     {
         $schedule = Schedule::find($id);
@@ -261,9 +175,6 @@ class ScheduleController extends Controller
         return $this->sendResponse(null, 'Horario eliminado exitosamente');
     }
 
-    /**
-     * Obtener horario semanal de una sección
-     */
     public function bySection(int $sectionId): JsonResponse
     {
         $this->authorize('viewBySection', [Schedule::class, $sectionId]);
@@ -274,34 +185,11 @@ class ScheduleController extends Controller
             return $this->sendError('Sección no encontrada');
         }
 
-        $schedules = Schedule::with(['subjectAssignment.subject', 'subjectAssignment.teacher'])
-            ->whereHas('subjectAssignment', function ($q) use ($sectionId) {
-                $q->where('section_id', $sectionId)
-                    ->where('status', true);
-            })
-            ->where('status', true)
-            ->orderBy('start_time')
-            ->get()
-            ->groupBy('day_of_week');
+        $data = app(ScheduleDataService::class)->weeklyForSection($section);
 
-        // Ordenar por días de la semana
-        $orderedDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        $orderedSchedule = collect($orderedDays)->mapWithKeys(function ($day) use ($schedules) {
-            return [$day => $schedules->get($day, collect())];
-        });
-
-        $response = [
-            'section' => $section->load('grade.educationLevel'),
-            'schedule' => $orderedSchedule,
-            'days' => Schedule::DAYS,
-        ];
-
-        return $this->sendResponse($response, 'Horario de la sección obtenido exitosamente');
+        return $this->sendResponse($data, 'Horario de la sección obtenido exitosamente');
     }
 
-    /**
-     * Obtener horario semanal de un profesor
-     */
     public function byTeacher(int $teacherId): JsonResponse
     {
         $this->authorize('viewByTeacher', [Schedule::class, $teacherId]);
@@ -312,37 +200,11 @@ class ScheduleController extends Controller
             return $this->sendError('Profesor no encontrado');
         }
 
-        $schedules = Schedule::with([
-            'subjectAssignment.subject',
-            'subjectAssignment.section.grade.educationLevel',
-        ])
-            ->whereHas('subjectAssignment', function ($q) use ($teacherId) {
-                $q->where('teacher_id', $teacherId)
-                    ->where('status', true);
-            })
-            ->where('status', true)
-            ->orderBy('start_time')
-            ->get()
-            ->groupBy('day_of_week');
+        $data = app(ScheduleDataService::class)->weeklyForTeacher($teacher);
 
-        // Ordenar por días de la semana
-        $orderedDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        $orderedSchedule = collect($orderedDays)->mapWithKeys(function ($day) use ($schedules) {
-            return [$day => $schedules->get($day, collect())];
-        });
-
-        $response = [
-            'teacher' => $teacher,
-            'schedule' => $orderedSchedule,
-            'days' => Schedule::DAYS,
-        ];
-
-        return $this->sendResponse($response, 'Horario del profesor obtenido exitosamente');
+        return $this->sendResponse($data, 'Horario del profesor obtenido exitosamente');
     }
 
-    /**
-     * Obtener horario semanal de un estudiante (basado en su sección)
-     */
     public function byStudent(int $studentId): JsonResponse
     {
         $this->authorize('viewByStudent', [Schedule::class, $studentId]);
@@ -362,9 +224,6 @@ class ScheduleController extends Controller
         return $this->bySection($enrollment->section_id);
     }
 
-    /**
-     * Obtener horario del día actual para una sección
-     */
     public function todayBySection(int $sectionId): JsonResponse
     {
         $this->authorize('viewBySection', [Schedule::class, $sectionId]);
@@ -375,25 +234,9 @@ class ScheduleController extends Controller
             return $this->sendError('Sección no encontrada');
         }
 
-        $today = strtolower(now()->format('l')); // monday, tuesday, etc.
+        $today = strtolower(now()->format('l'));
+        $data = app(ScheduleDataService::class)->todayForSection($section, $today);
 
-        $schedules = Schedule::with(['subjectAssignment.subject', 'subjectAssignment.teacher'])
-            ->whereHas('subjectAssignment', function ($q) use ($sectionId) {
-                $q->where('section_id', $sectionId)
-                    ->where('status', true);
-            })
-            ->where('day_of_week', $today)
-            ->where('status', true)
-            ->orderBy('start_time')
-            ->get();
-
-        $response = [
-            'section' => $section->load('grade.educationLevel'),
-            'day' => $today,
-            'day_name' => Schedule::DAYS[$today] ?? $today,
-            'schedules' => $schedules,
-        ];
-
-        return $this->sendResponse($response, 'Horario del día obtenido exitosamente');
+        return $this->sendResponse($data, 'Horario del día obtenido exitosamente');
     }
 }
