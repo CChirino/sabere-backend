@@ -96,8 +96,13 @@ class DashboardMetricService
             ->groupBy('subject_assignment_id')
             ->get();
 
-        return $scores->map(function ($score) {
-            $assignment = SubjectAssignment::with('section.grade')->find($score->subject_assignment_id);
+        $assignments = SubjectAssignment::with('section.grade')
+            ->whereIn('id', $scores->pluck('subject_assignment_id'))
+            ->get()
+            ->keyBy('id');
+
+        return $scores->map(function ($score) use ($assignments) {
+            $assignment = $assignments->get($score->subject_assignment_id);
 
             return [
                 'section_id' => $assignment?->section_id,
@@ -117,8 +122,13 @@ class DashboardMetricService
             ->groupBy('subject_assignment_id')
             ->get();
 
-        return $scores->map(function ($score) {
-            $assignment = SubjectAssignment::with('subject')->find($score->subject_assignment_id);
+        $assignments = SubjectAssignment::with('subject')
+            ->whereIn('id', $scores->pluck('subject_assignment_id'))
+            ->get()
+            ->keyBy('id');
+
+        return $scores->map(function ($score) use ($assignments) {
+            $assignment = $assignments->get($score->subject_assignment_id);
 
             return [
                 'subject_id' => $assignment?->subject_id,
@@ -180,7 +190,8 @@ class DashboardMetricService
 
     public function disciplinaryByType(int $academicPeriodId): array
     {
-        $records = DisciplinaryRecord::where('academic_period_id', $academicPeriodId)
+        $records = DisciplinaryRecord::with('incidentType')
+            ->where('academic_period_id', $academicPeriodId)
             ->select('incident_type_id', DB::raw('count(*) as total'))
             ->groupBy('incident_type_id')
             ->get();
