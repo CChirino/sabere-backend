@@ -21,7 +21,7 @@ class RoleController extends Controller
     {
         $roles = Role::with('permissions')->paginate($this->perPage($request));
 
-        return response()->json($roles);
+        return $this->sendPaginatedResponse($roles, 'Roles obtenidos exitosamente');
     }
 
     public function store(Request $request)
@@ -32,18 +32,21 @@ class RoleController extends Controller
             'permissions.*' => 'exists:permissions,name',
         ]);
 
-        $role = Role::create(['name' => $validated['name']]);
+        $role = Role::create([
+            'name' => $validated['name'],
+            'guard_name' => 'web',
+        ]);
 
         if (isset($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
         }
 
-        return response()->json($role->load('permissions'), 201);
+        return $this->sendResponse($role->load('permissions'), 'Rol creado exitosamente', 201);
     }
 
     public function show(Role $role)
     {
-        return response()->json($role->load('permissions'));
+        return $this->sendResponse($role->load('permissions'), 'Rol obtenido exitosamente');
     }
 
     public function update(Request $request, Role $role)
@@ -60,16 +63,14 @@ class RoleController extends Controller
             $role->syncPermissions($validated['permissions']);
         }
 
-        return response()->json($role->load('permissions'));
+        return $this->sendResponse($role->load('permissions'), 'Rol actualizado exitosamente');
     }
 
     public function destroy(Role $role)
     {
         // Prevenir eliminación de roles del sistema
         if (in_array($role->name, ['super_admin', 'admin', 'teacher', 'student', 'parent'])) {
-            return response()->json([
-                'message' => 'No se puede eliminar este rol del sistema',
-            ], 403);
+            return $this->sendError('No se puede eliminar este rol del sistema', [], 403);
         }
 
         $role->delete();

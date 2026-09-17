@@ -21,7 +21,7 @@ class UserController extends Controller
     {
         $users = User::with('roles')->paginate($this->perPage($request));
 
-        return response()->json($users);
+        return $this->sendPaginatedResponse($users, 'Usuarios obtenidos exitosamente');
     }
 
     public function store(Request $request)
@@ -42,12 +42,12 @@ class UserController extends Controller
 
         $user->syncRoles($validated['roles']);
 
-        return response()->json($user->load('roles'), 201);
+        return $this->sendResponse($user->load('roles'), 'Usuario creado exitosamente', 201);
     }
 
     public function show(User $user)
     {
-        return response()->json($user->load('roles'));
+        return $this->sendResponse($user->load('roles'), 'Usuario obtenido exitosamente');
     }
 
     public function update(Request $request, User $user)
@@ -75,24 +75,20 @@ class UserController extends Controller
             $user->syncRoles($validated['roles']);
         }
 
-        return response()->json($user->load('roles'));
+        return $this->sendResponse($user->load('roles'), 'Usuario actualizado exitosamente');
     }
 
     public function destroy(User $user)
     {
         // Prevenir eliminación de usuarios con roles administrativos
         if ($user->hasAnyRole(['super_admin', 'admin'])) {
-            return response()->json([
-                'message' => 'No se puede eliminar un usuario con rol de administrador',
-            ], 403);
+            return $this->sendError('No se puede eliminar un usuario con rol de administrador', [], 403);
         }
 
         // MED-05: Evitar que cualquier usuario administrativo sea eliminado
         // por otro admin/director sin salvaguardas adicionales.
         if ($user->id === auth()->id()) {
-            return response()->json([
-                'message' => 'No puedes eliminar tu propia cuenta',
-            ], 403);
+            return $this->sendError('No puedes eliminar tu propia cuenta', [], 403);
         }
 
         $user->delete();
