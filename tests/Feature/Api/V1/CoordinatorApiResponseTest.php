@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\StudentScore;
+use App\Models\SubjectAssignment;
+use App\Models\Term;
 use Tests\TestCase;
 
 class CoordinatorApiResponseTest extends TestCase
@@ -57,13 +60,28 @@ class CoordinatorApiResponseTest extends TestCase
     public function test_scores_overview_uses_standard_response(): void
     {
         $coordinator = $this->createUser('coordinator');
+        $term = Term::factory()->create();
+        $assignment = SubjectAssignment::factory()->create();
+        StudentScore::factory()->create([
+            'subject_assignment_id' => $assignment->id,
+            'term_id' => $term->id,
+            'score' => 8,
+        ]);
+        StudentScore::factory()->create([
+            'subject_assignment_id' => $assignment->id,
+            'term_id' => $term->id,
+            'score' => 14,
+        ]);
 
         $this->actingAs($coordinator)
-            ->getJson('/api/v1/coordinator/scores-overview?per_page=5')
+            ->getJson("/api/v1/coordinator/scores-overview?per_page=5&term_id={$term->id}")
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('message', 'Resumen de notas obtenido exitosamente')
             ->assertJsonPath('data.pagination.per_page', 5)
+            ->assertJsonPath('data.items.0.scores_entered', 2)
+            ->assertJsonPath('data.items.0.average_score', 11)
+            ->assertJsonPath('data.stats.students_below_passing', 1)
             ->assertJsonStructure(['data' => ['items', 'stats', 'pagination']]);
     }
 }

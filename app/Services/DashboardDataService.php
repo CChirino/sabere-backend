@@ -225,7 +225,39 @@ class DashboardDataService
             }])
             ->get();
 
-        $studentsData = $students->map(function ($student) {
+        $studentIds = $students->pluck('id');
+        $enrollments = $students->pluck('enrollments')->flatten();
+        $sectionIds = $enrollments->pluck('section_id')->unique();
+        $periodIds = $enrollments->pluck('academic_period_id')->unique();
+
+        $termsByPeriod = Term::whereIn('academic_period_id', $periodIds)
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->get()
+            ->keyBy('academic_period_id');
+
+        $tasksBySection = Task::with([
+            'subjectAssignment:id,section_id',
+            'submissions' => function ($query) use ($studentIds) {
+                $query->whereIn('student_id', $studentIds)
+                    ->whereIn('status', ['submitted', 'graded']);
+            },
+        ])
+            ->whereHas('subjectAssignment', function ($query) use ($sectionIds) {
+                $query->whereIn('section_id', $sectionIds);
+            })
+            ->where('is_published', true)
+            ->get()
+            ->groupBy('subjectAssignment.section_id');
+
+        $scoresByStudentAndTerm = StudentScore::whereIn('student_id', $studentIds)
+            ->whereIn('term_id', $termsByPeriod->pluck('id'))
+            ->get()
+            ->groupBy(function ($score) {
+                return $score->student_id.':'.$score->term_id;
+            });
+
+        $studentsData = $students->map(function ($student) use ($tasksBySection, $termsByPeriod, $scoresByStudentAndTerm) {
             $enrollment = $student->enrollments->first();
 
             if (! $enrollment) {
@@ -237,24 +269,15 @@ class DashboardDataService
                 ];
             }
 
-            $currentTerm = Term::where('academic_period_id', $enrollment->academic_period_id)
-                ->whereDate('start_date', '<=', now())
-                ->whereDate('end_date', '>=', now())
-                ->first();
-
-            $pendingTasks = Task::whereHas('subjectAssignment', function ($q) use ($enrollment) {
-                $q->where('section_id', $enrollment->section_id);
-            })
-                ->where('is_published', true)
-                ->whereDoesntHave('submissions', function ($q) use ($student) {
-                    $q->where('student_id', $student->id)
-                        ->whereIn('status', ['submitted', 'graded']);
-                })
-                ->count();
-
-            $average = $currentTerm ? StudentScore::where('student_id', $student->id)
-                ->where('term_id', $currentTerm->id)
-                ->avg('score') : null;
+            $currentTerm = $termsByPeriod->get($enrollment->academic_period_id);
+            $sectionTasks = $tasksBySection->get($enrollment->section_id, collect());
+            $pendingTasks = $sectionTasks->filter(function ($task) use ($student) {
+                return ! $task->submissions->contains('student_id', $student->id);
+            })->count();
+            $scores = $currentTerm
+                ? $scoresByStudentAndTerm->get($student->id.':'.$currentTerm->id, collect())
+                : collect();
+            $average = $scores->avg('score');
 
             return [
                 'student' => $student,
@@ -310,23 +333,20 @@ class DashboardDataService
             return 0;
         }
 
-        $totalExpected = 0;
-        $totalGraded = 0;
-
         $assignments = SubjectAssignment::where('academic_period_id', $term->academic_period_id)
             ->where('status', true)
-            ->with('section.enrollments')
+            ->with(['section.enrollments' => function ($query) {
+                $query->where('status', 'active');
+            }])
             ->get();
 
-        foreach ($assignments as $assignment) {
-            $studentCount = $assignment->section->enrollments()->where('status', 'active')->count();
-            $totalExpected += $studentCount;
+        $totalExpected = $assignments->sum(function ($assignment) {
+            return $assignment->section?->enrollments->count() ?? 0;
+        });
 
-            $gradedCount = StudentScore::where('subject_assignment_id', $assignment->id)
-                ->where('term_id', $termId)
-                ->count();
-            $totalGraded += $gradedCount;
-        }
+        $totalGraded = StudentScore::whereIn('subject_assignment_id', $assignments->pluck('id'))
+            ->where('term_id', $termId)
+            ->count();
 
         return $totalExpected - $totalGraded;
     }

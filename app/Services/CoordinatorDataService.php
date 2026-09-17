@@ -58,7 +58,7 @@ class CoordinatorDataService
                         'subject:id,name',
                         'section:id,name,grade_id',
                         'section.grade:id,name',
-                        'section.students:id',
+                        'section.students',
                         'academicPeriod:id,name',
                     ])
                     ->withCount('tasks');
@@ -69,6 +69,15 @@ class CoordinatorDataService
             return null;
         }
 
+        $assignmentIds = $teacher->subjectAssignments->pluck('id');
+        $pendingByAssignment = Task::whereIn('subject_assignment_id', $assignmentIds)
+            ->whereHas('submissions', function ($q) {
+                $q->where('status', 'submitted');
+            })
+            ->selectRaw('subject_assignment_id, COUNT(*) as aggregate')
+            ->groupBy('subject_assignment_id')
+            ->pluck('aggregate', 'subject_assignment_id');
+
         $totalTasks = 0;
         $totalStudents = 0;
         $pendingSubmissions = 0;
@@ -78,11 +87,7 @@ class CoordinatorDataService
             $assignment->students_count = $assignment->section?->students->count() ?? 0;
             $totalStudents += $assignment->students_count;
 
-            $pending = $assignment->tasks()
-                ->whereHas('submissions', function ($q) {
-                    $q->where('status', 'submitted');
-                })
-                ->count();
+            $pending = (int) ($pendingByAssignment[$assignment->id] ?? 0);
             $pendingSubmissions += $pending;
             $assignment->pending_submissions = $pending;
         }
@@ -192,24 +197,28 @@ class CoordinatorDataService
         $perPage = app(PaginationService::class)->perPage($request);
         $assignments = $query->paginate($perPage);
 
+        $scoreStats = StudentScore::whereIn('subject_assignment_id', $assignments->pluck('id'))
+            ->where('term_id', $termId)
+            ->selectRaw('subject_assignment_id, COUNT(*) as scores_entered, AVG(score) as average_score, SUM(CASE WHEN score < 10 THEN 1 ELSE 0 END) as below_passing')
+            ->groupBy('subject_assignment_id')
+            ->get()
+            ->keyBy('subject_assignment_id');
+
         $sectionsWithScores = 0;
         $totalAverage = 0;
         $averageCount = 0;
         $studentsBelowPassing = 0;
 
-        $assignments->getCollection()->transform(function ($assignment) use ($termId, &$sectionsWithScores, &$totalAverage, &$averageCount, &$studentsBelowPassing) {
-            $scores = StudentScore::where('subject_assignment_id', $assignment->id)
-                ->where('term_id', $termId)
-                ->get();
-
-            $scoresEntered = $scores->count();
-            $avgScore = $scores->avg('score') ?? 0;
+        $assignments->getCollection()->transform(function ($assignment) use ($scoreStats, &$sectionsWithScores, &$totalAverage, &$averageCount, &$studentsBelowPassing) {
+            $stats = $scoreStats->get($assignment->id);
+            $scoresEntered = (int) ($stats?->scores_entered ?? 0);
+            $avgScore = (float) ($stats?->average_score ?? 0);
 
             if ($scoresEntered > 0) {
                 $sectionsWithScores++;
                 $totalAverage += $avgScore;
                 $averageCount++;
-                $studentsBelowPassing += $scores->where('score', '<', 10)->count();
+                $studentsBelowPassing += (int) $stats->below_passing;
             }
 
             return [
