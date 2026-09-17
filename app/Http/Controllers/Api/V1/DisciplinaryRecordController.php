@@ -42,7 +42,10 @@ class DisciplinaryRecordController extends Controller
             $query->where('student_id', $request->input('student_id'));
         }
 
-        return response()->json($query->paginate($this->perPage($request)));
+        return $this->sendPaginatedResponse(
+            $query->paginate($this->perPage($request)),
+            'Incidencias obtenidas exitosamente'
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -63,14 +66,21 @@ class DisciplinaryRecordController extends Controller
 
         $record = $this->disciplineService->create($data, $request->user());
 
-        return response()->json($record->load(['student', 'incidentType', 'recordedBy']), 201);
+        return $this->sendResponse(
+            $record->load(['student', 'incidentType', 'recordedBy']),
+            'Incidencia creada exitosamente',
+            201
+        );
     }
 
     public function show(DisciplinaryRecord $disciplinaryRecord): JsonResponse
     {
         $this->authorize('view', $disciplinaryRecord);
 
-        return response()->json($disciplinaryRecord->load(['student', 'incidentType', 'recordedBy']));
+        return $this->sendResponse(
+            $disciplinaryRecord->load(['student', 'incidentType', 'recordedBy']),
+            'Incidencia obtenida exitosamente'
+        );
     }
 
     public function update(Request $request, DisciplinaryRecord $disciplinaryRecord): JsonResponse
@@ -88,7 +98,10 @@ class DisciplinaryRecordController extends Controller
 
         $record = $this->disciplineService->update($disciplinaryRecord, $data);
 
-        return response()->json($record->load(['student', 'incidentType', 'recordedBy']));
+        return $this->sendResponse(
+            $record->load(['student', 'incidentType', 'recordedBy']),
+            'Incidencia actualizada exitosamente'
+        );
     }
 
     public function destroy(DisciplinaryRecord $disciplinaryRecord): JsonResponse
@@ -97,6 +110,6 @@ class DisciplinaryRecordController extends Controller
 
         $disciplinaryRecord->delete();
 
-        return response()->json(['message' => 'Incidencia eliminada']);
+        return $this->sendResponse(null, 'Incidencia eliminada exitosamente');
     }
 }

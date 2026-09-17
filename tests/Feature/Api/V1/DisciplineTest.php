@@ -35,7 +35,10 @@ class DisciplineTest extends TestCase
                 'description' => 'Uso inadecuado del celular',
                 'date' => now()->format('Y-m-d'),
             ])
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Incidencia creada exitosamente')
+            ->assertJsonPath('data.student_id', $student->id);
 
         $this->assertDatabaseHas('disciplinary_records', [
             'student_id' => $student->id,
@@ -52,7 +55,9 @@ class DisciplineTest extends TestCase
         $this->actingAs($student)
             ->getJson(route('api.disciplinary-records.show', $record))
             ->assertOk()
-            ->assertJsonPath('id', $record->id);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Incidencia obtenida exitosamente')
+            ->assertJsonPath('data.id', $record->id);
     }
 
     public function test_guardian_can_view_child_records(): void
@@ -68,7 +73,9 @@ class DisciplineTest extends TestCase
         $this->actingAs($guardian)
             ->getJson(route('api.disciplinary-records.show', $record))
             ->assertOk()
-            ->assertJsonPath('id', $record->id);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Incidencia obtenida exitosamente')
+            ->assertJsonPath('data.id', $record->id);
     }
 
     public function test_guardian_cannot_view_other_records(): void
@@ -92,5 +99,49 @@ class DisciplineTest extends TestCase
         $this->actingAs($student)
             ->getJson(route('api.disciplinary-records.show', $record))
             ->assertForbidden();
+    }
+
+    public function test_discipline_lists_use_standard_responses(): void
+    {
+        $coordinator = $this->createUser('coordinator');
+        IncidentType::factory()->create(['is_active' => true]);
+        DisciplinaryRecord::factory()->create();
+
+        $this->actingAs($coordinator)
+            ->getJson(route('api.disciplinary-records.index', ['per_page' => 5]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Incidencias obtenidas exitosamente')
+            ->assertJsonPath('per_page', 5)
+            ->assertJsonStructure(['data', 'current_page', 'last_page', 'total']);
+
+        $this->actingAs($coordinator)
+            ->getJson(route('api.incident-types.index', ['per_page' => 5]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Tipos de incidencia obtenidos exitosamente')
+            ->assertJsonPath('per_page', 5);
+    }
+
+    public function test_staff_can_update_and_delete_record_with_standard_responses(): void
+    {
+        $coordinator = $this->createUser('coordinator');
+        $record = DisciplinaryRecord::factory()->create();
+
+        $this->actingAs($coordinator)
+            ->putJson(route('api.disciplinary-records.update', $record), [
+                'description' => 'Descripción actualizada',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Incidencia actualizada exitosamente')
+            ->assertJsonPath('data.description', 'Descripción actualizada');
+
+        $this->actingAs($coordinator)
+            ->deleteJson(route('api.disciplinary-records.destroy', $record))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data', null)
+            ->assertJsonPath('message', 'Incidencia eliminada exitosamente');
     }
 }

@@ -32,7 +32,10 @@ class JustificationController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        return response()->json($query->paginate($this->perPage($request)));
+        return $this->sendPaginatedResponse(
+            $query->paginate($this->perPage($request)),
+            'Justificativos obtenidos exitosamente'
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -50,14 +53,21 @@ class JustificationController extends Controller
 
         $justification = $this->justificationService->create($data, $request->user());
 
-        return response()->json($justification->load(['student', 'guardian', 'academicPeriod']), 201);
+        return $this->sendResponse(
+            $justification->load(['student', 'guardian', 'academicPeriod']),
+            'Justificativo creado exitosamente',
+            201
+        );
     }
 
     public function show(Justification $justification): JsonResponse
     {
         $this->authorize('view', $justification);
 
-        return response()->json($justification->load(['student', 'guardian', 'academicPeriod', 'reviewedBy']));
+        return $this->sendResponse(
+            $justification->load(['student', 'guardian', 'academicPeriod', 'reviewedBy']),
+            'Justificativo obtenido exitosamente'
+        );
     }
 
     public function approve(Request $request, Justification $justification): JsonResponse
@@ -68,7 +78,10 @@ class JustificationController extends Controller
 
         $justification = $this->justificationService->approve($justification, $request->user(), $data['notes'] ?? null);
 
-        return response()->json($justification->load(['student', 'guardian', 'academicPeriod', 'reviewedBy']));
+        return $this->sendResponse(
+            $justification->load(['student', 'guardian', 'academicPeriod', 'reviewedBy']),
+            'Justificativo aprobado exitosamente'
+        );
     }
 
     public function reject(Request $request, Justification $justification): JsonResponse
@@ -79,7 +92,10 @@ class JustificationController extends Controller
 
         $justification = $this->justificationService->reject($justification, $request->user(), $data['notes'] ?? null);
 
-        return response()->json($justification->load(['student', 'guardian', 'academicPeriod', 'reviewedBy']));
+        return $this->sendResponse(
+            $justification->load(['student', 'guardian', 'academicPeriod', 'reviewedBy']),
+            'Justificativo rechazado exitosamente'
+        );
     }
 
     public function destroy(Justification $justification): JsonResponse
@@ -88,6 +104,6 @@ class JustificationController extends Controller
 
         $justification->delete();
 
-        return response()->json(['message' => 'Justificativo eliminado']);
+        return $this->sendResponse(null, 'Justificativo eliminado exitosamente');
     }
 }

@@ -29,7 +29,10 @@ class JustificationTest extends TestCase
                 'end_date' => now()->format('Y-m-d'),
                 'reason' => 'Cita médica',
             ])
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Justificativo creado exitosamente')
+            ->assertJsonPath('data.student_id', $student->id);
 
         $this->assertDatabaseHas('justifications', [
             'guardian_id' => $guardian->id,
@@ -72,7 +75,10 @@ class JustificationTest extends TestCase
             ->postJson(route('api.justifications.approve', $justification), [
                 'notes' => 'Constancia recibida',
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Justificativo aprobado exitosamente')
+            ->assertJsonPath('data.status', 'approved');
 
         $this->assertDatabaseHas('justifications', [
             'id' => $justification->id,
@@ -122,11 +128,48 @@ class JustificationTest extends TestCase
             ->postJson(route('api.justifications.reject', $justification), [
                 'notes' => 'Falta documento',
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Justificativo rechazado exitosamente')
+            ->assertJsonPath('data.status', 'rejected');
 
         $this->assertDatabaseHas('justifications', [
             'id' => $justification->id,
             'status' => 'rejected',
         ]);
+    }
+
+    public function test_justification_list_and_show_use_standard_responses(): void
+    {
+        $coordinator = $this->createUser('coordinator');
+        $justification = Justification::factory()->create();
+
+        $this->actingAs($coordinator)
+            ->getJson(route('api.justifications.index', ['per_page' => 5]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Justificativos obtenidos exitosamente')
+            ->assertJsonPath('per_page', 5)
+            ->assertJsonStructure(['data', 'current_page', 'last_page', 'total']);
+
+        $this->actingAs($coordinator)
+            ->getJson(route('api.justifications.show', $justification))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Justificativo obtenido exitosamente')
+            ->assertJsonPath('data.id', $justification->id);
+    }
+
+    public function test_staff_can_delete_justification_with_standard_response(): void
+    {
+        $coordinator = $this->createUser('coordinator');
+        $justification = Justification::factory()->create();
+
+        $this->actingAs($coordinator)
+            ->deleteJson(route('api.justifications.destroy', $justification))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data', null)
+            ->assertJsonPath('message', 'Justificativo eliminado exitosamente');
     }
 }
