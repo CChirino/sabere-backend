@@ -6,6 +6,8 @@ use App\Models\AcademicPeriod;
 use App\Models\Grade;
 use App\Models\Section;
 use App\Models\StudentApplication;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdmissionTest extends TestCase
@@ -39,7 +41,10 @@ class AdmissionTest extends TestCase
 
         $this->actingAs($coordinator)
             ->postJson('/api/v1/admissions', $payload)
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Admisión creada exitosamente')
+            ->assertJsonPath('data.first_name', 'Juan');
 
         $this->assertDatabaseHas('student_applications', [
             'first_name' => 'Juan',
@@ -85,7 +90,10 @@ class AdmissionTest extends TestCase
             ->postJson("/api/v1/admissions/{$application->id}/approve", [
                 'section_id' => $section->id,
             ])
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Admisión aprobada y matrícula creada exitosamente')
+            ->assertJsonPath('data.section_id', $section->id);
 
         $application->refresh();
         $this->assertEquals('approved', $application->status);
@@ -106,7 +114,10 @@ class AdmissionTest extends TestCase
             ->postJson("/api/v1/admissions/{$application->id}/reject", [
                 'rejection_reason' => 'Documentos incompletos',
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Admisión rechazada exitosamente')
+            ->assertJsonPath('data.status', 'rejected');
 
         $this->assertEquals('rejected', $application->fresh()->status);
     }
@@ -124,7 +135,9 @@ class AdmissionTest extends TestCase
         $this->actingAs($coordinator)
             ->getJson("/api/v1/admissions/{$application->id}/suggest-sections")
             ->assertOk()
-            ->assertJsonCount(1);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Secciones sugeridas obtenidas exitosamente')
+            ->assertJsonCount(1, 'data');
     }
 
     public function test_guardian_can_update_student_profile(): void
@@ -142,12 +155,97 @@ class AdmissionTest extends TestCase
                 'emergency_contact_phone' => '0412-1234567',
                 'allergies' => 'Polen',
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Perfil estudiantil actualizado exitosamente')
+            ->assertJsonPath('data.allergies', 'Polen');
 
         $this->assertDatabaseHas('student_profiles', [
             'user_id' => $student->id,
             'emergency_contact_name' => 'María Pérez',
             'allergies' => 'Polen',
         ]);
+    }
+
+    public function test_admissions_list_and_show_use_standard_responses(): void
+    {
+        $coordinator = $this->createUser('coordinator');
+        $application = StudentApplication::factory()->create();
+
+        $this->actingAs($coordinator)
+            ->getJson('/api/v1/admissions?per_page=5')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Admisiones obtenidas exitosamente')
+            ->assertJsonPath('per_page', 5)
+            ->assertJsonStructure(['data', 'current_page', 'last_page', 'total']);
+
+        $this->actingAs($coordinator)
+            ->getJson("/api/v1/admissions/{$application->id}")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Admisión obtenida exitosamente')
+            ->assertJsonPath('data.id', $application->id);
+    }
+
+    public function test_student_profile_and_documents_use_standard_responses(): void
+    {
+        Storage::fake('public');
+
+        $coordinator = $this->createUser('coordinator');
+        $student = $this->createUser('student');
+
+        $this->actingAs($coordinator)
+            ->getJson("/api/v1/students/{$student->id}/profile")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Perfil estudiantil obtenido exitosamente')
+            ->assertJsonStructure(['data' => ['profile', 'documents']]);
+
+        $response = $this->actingAs($coordinator)
+            ->post("/api/v1/students/{$student->id}/documents", [
+                'file' => UploadedFile::fake()->create('partida.pdf', 100, 'application/pdf'),
+                'type' => 'birth_certificate',
+            ], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Documento estudiantil creado exitosamente');
+
+        $documentId = $response->json('data.id');
+
+        $this->actingAs($coordinator)
+            ->postJson("/api/v1/students/{$student->id}/documents/{$documentId}/verify")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Documento estudiantil verificado exitosamente')
+            ->assertJsonPath('data.is_verified', true);
+    }
+
+    public function test_unverified_document_deletion_uses_standard_response(): void
+    {
+        Storage::fake('public');
+
+        $guardian = $this->createUser('guardian');
+        $student = $this->createUser('student');
+        $guardian->students()->attach($student->id, [
+            'relationship' => 'mother',
+            'is_primary' => true,
+        ]);
+
+        $response = $this->actingAs($guardian)
+            ->post("/api/v1/students/{$student->id}/documents", [
+                'file' => UploadedFile::fake()->create('informe.pdf', 100, 'application/pdf'),
+                'type' => 'medical_report',
+            ], ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $documentId = $response->json('data.id');
+
+        $this->actingAs($guardian)
+            ->deleteJson("/api/v1/students/{$student->id}/documents/{$documentId}")
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data', null)
+            ->assertJsonPath('message', 'Documento estudiantil eliminado exitosamente');
     }
 }

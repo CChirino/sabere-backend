@@ -8,8 +8,8 @@ const { get } = useApi();
 const admissions = ref<any[]>([]);
 
 const fetchAdmissions = async () => {
-    const response = await get<any>('/api/v1/admissions');
-    admissions.value = response?.data ?? [];
+    const response = await get<any[]>('/api/v1/admissions');
+    admissions.value = response ?? [];
 };
 
 onMounted(fetchAdmissions);

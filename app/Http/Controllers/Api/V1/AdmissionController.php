@@ -25,7 +25,10 @@ class AdmissionController extends Controller
             $query->where('status', $request->get('status'));
         }
 
-        return response()->json($query->paginate($this->perPage($request)));
+        return $this->sendPaginatedResponse(
+            $query->paginate($this->perPage($request)),
+            'Admisiones obtenidas exitosamente'
+        );
     }
 
     public function store(Request $request): JsonResponse
@@ -36,14 +39,21 @@ class AdmissionController extends Controller
 
         $application = $this->service->create($data, $request->user());
 
-        return response()->json($application->load(['guardians', 'documents']), 201);
+        return $this->sendResponse(
+            $application->load(['guardians', 'documents']),
+            'Admisión creada exitosamente',
+            201
+        );
     }
 
     public function show(Request $request, StudentApplication $admission): JsonResponse
     {
         $this->authorize('view', $admission);
 
-        return response()->json($admission->load(['guardians', 'documents', 'academicPeriod', 'grade']));
+        return $this->sendResponse(
+            $admission->load(['guardians', 'documents', 'academicPeriod', 'grade']),
+            'Admisión obtenida exitosamente'
+        );
     }
 
     public function update(Request $request, StudentApplication $admission): JsonResponse
@@ -54,7 +64,10 @@ class AdmissionController extends Controller
 
         $application = $this->service->update($admission, $data);
 
-        return response()->json($application->load(['guardians', 'documents']));
+        return $this->sendResponse(
+            $application->load(['guardians', 'documents']),
+            'Admisión actualizada exitosamente'
+        );
     }
 
     public function approve(Request $request, StudentApplication $admission): JsonResponse
@@ -67,7 +80,11 @@ class AdmissionController extends Controller
 
         $enrollment = $this->service->approve($admission, $request->user(), $data);
 
-        return response()->json($enrollment->load(['student', 'section']), 201);
+        return $this->sendResponse(
+            $enrollment->load(['student', 'section']),
+            'Admisión aprobada y matrícula creada exitosamente',
+            201
+        );
     }
 
     public function reject(Request $request, StudentApplication $admission): JsonResponse
@@ -80,14 +97,17 @@ class AdmissionController extends Controller
 
         $this->service->reject($admission, $request->user(), $data['rejection_reason']);
 
-        return response()->json($admission->fresh());
+        return $this->sendResponse($admission->fresh(), 'Admisión rechazada exitosamente');
     }
 
     public function suggestSections(StudentApplication $admission): JsonResponse
     {
         $this->authorize('view', $admission);
 
-        return response()->json($this->service->suggestSections($admission)->values());
+        return $this->sendResponse(
+            $this->service->suggestSections($admission)->values(),
+            'Secciones sugeridas obtenidas exitosamente'
+        );
     }
 
     private function rules(bool $partial = false): array

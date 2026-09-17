@@ -20,10 +20,10 @@ class StudentProfileController extends Controller
     {
         Gate::authorize('view-profile', $student);
 
-        return response()->json([
+        return $this->sendResponse([
             'profile' => $student->studentProfile ?? $this->createEmpty($student),
             'documents' => $student->studentDocuments,
-        ]);
+        ], 'Perfil estudiantil obtenido exitosamente');
     }
 
     public function update(Request $request, User $student): JsonResponse
@@ -49,7 +49,7 @@ class StudentProfileController extends Controller
 
         $profile = $this->service->updateOrCreate($student, $data);
 
-        return response()->json($profile);
+        return $this->sendResponse($profile, 'Perfil estudiantil actualizado exitosamente');
     }
 
     public function storeDocument(Request $request, User $student): JsonResponse
@@ -64,7 +64,7 @@ class StudentProfileController extends Controller
 
         $document = $this->service->storeDocument($student, $data, $request->user());
 
-        return response()->json($document, 201);
+        return $this->sendResponse($document, 'Documento estudiantil creado exitosamente', 201);
     }
 
     public function destroyDocument(Request $request, User $student, StudentDocument $document): JsonResponse
@@ -73,7 +73,7 @@ class StudentProfileController extends Controller
 
         $this->service->deleteDocument($document);
 
-        return response()->json(['message' => 'Documento eliminado.']);
+        return $this->sendResponse(null, 'Documento estudiantil eliminado exitosamente');
     }
 
     public function verifyDocument(Request $request, User $student, StudentDocument $document): JsonResponse
@@ -82,7 +82,7 @@ class StudentProfileController extends Controller
 
         $document->markAsVerified($request->user());
 
-        return response()->json($document);
+        return $this->sendResponse($document, 'Documento estudiantil verificado exitosamente');
     }
 
     private function createEmpty(User $student): array
