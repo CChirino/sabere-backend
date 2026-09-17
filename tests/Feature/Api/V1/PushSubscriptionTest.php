@@ -19,7 +19,10 @@ class PushSubscriptionTest extends TestCase
                     'auth' => 'auth-token',
                 ],
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Suscripción registrada exitosamente')
+            ->assertJsonPath('data.endpoint', 'https://fcm.googleapis.com/fcm/send/test-123');
 
         $this->assertDatabaseHas('push_subscriptions', [
             'user_id' => $user->id,
@@ -42,7 +45,10 @@ class PushSubscriptionTest extends TestCase
             ->deleteJson('/api/v1/push-subscriptions', [
                 'endpoint' => 'https://fcm.googleapis.com/fcm/send/test-123',
             ])
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data', null)
+            ->assertJsonPath('message', 'Suscripción eliminada exitosamente');
 
         $this->assertDatabaseMissing('push_subscriptions', [
             'user_id' => $user->id,

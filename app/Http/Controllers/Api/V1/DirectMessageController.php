@@ -20,7 +20,7 @@ class DirectMessageController extends Controller
             ->orderByDesc('created_at')
             ->paginate($this->perPage($request));
 
-        return response()->json($messages);
+        return $this->sendPaginatedResponse($messages, 'Mensajes recibidos obtenidos exitosamente');
     }
 
     public function sent(Request $request): JsonResponse
@@ -30,7 +30,7 @@ class DirectMessageController extends Controller
             ->orderByDesc('created_at')
             ->paginate($this->perPage($request));
 
-        return response()->json($messages);
+        return $this->sendPaginatedResponse($messages, 'Mensajes enviados obtenidos exitosamente');
     }
 
     public function show(Request $request, DirectMessage $message): JsonResponse
@@ -43,7 +43,7 @@ class DirectMessageController extends Controller
 
         $message->load(['sender', 'recipient', 'replies']);
 
-        return response()->json($message);
+        return $this->sendResponse($message, 'Mensaje obtenido exitosamente');
     }
 
     public function store(Request $request): JsonResponse
@@ -59,7 +59,7 @@ class DirectMessageController extends Controller
         $recipient = User::findOrFail($data['recipient_id']);
 
         if (! app(DirectMessagePolicy::class)->canMessage($request->user(), $recipient)) {
-            return response()->json(['message' => 'No puedes enviar mensajes a este destinatario.'], 403);
+            return $this->sendError('No puedes enviar mensajes a este destinatario.', [], 403);
         }
 
         $attachmentPath = null;
@@ -94,7 +94,7 @@ class DirectMessageController extends Controller
             url("/messages/{$message->id}")
         );
 
-        return response()->json($message, 201);
+        return $this->sendResponse($message, 'Mensaje enviado exitosamente', 201);
     }
 
     public function markAsRead(Request $request, DirectMessage $message): JsonResponse
@@ -105,7 +105,7 @@ class DirectMessageController extends Controller
             $message->markAsRead();
         }
 
-        return response()->json($message);
+        return $this->sendResponse($message, 'Mensaje marcado como leído exitosamente');
     }
 
     public function recipients(Request $request): JsonResponse
@@ -129,7 +129,7 @@ class DirectMessageController extends Controller
             ->filter(fn (User $u) => $policy->canMessage($user, $u))
             ->values();
 
-        return response()->json($recipients);
+        return $this->sendResponse($recipients, 'Destinatarios obtenidos exitosamente');
     }
 
     public function unreadCount(Request $request): JsonResponse
@@ -138,6 +138,6 @@ class DirectMessageController extends Controller
             ->whereNull('read_at')
             ->count();
 
-        return response()->json(['count' => $count]);
+        return $this->sendResponse(['count' => $count], 'Cantidad de mensajes no leídos obtenida exitosamente');
     }
 }

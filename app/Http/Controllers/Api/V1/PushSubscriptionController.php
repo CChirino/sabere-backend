@@ -17,7 +17,7 @@ class PushSubscriptionController extends Controller
             'keys.auth' => ['required', 'string'],
         ]);
 
-        PushSubscription::updateOrCreate(
+        $subscription = PushSubscription::updateOrCreate(
             ['endpoint' => $data['endpoint']],
             [
                 'user_id' => $request->user()->id,
@@ -27,7 +27,7 @@ class PushSubscriptionController extends Controller
             ]
         );
 
-        return response()->json(['message' => 'Suscripción registrada.']);
+        return $this->sendResponse($subscription, 'Suscripción registrada exitosamente');
     }
 
     public function destroy(Request $request): JsonResponse
@@ -40,6 +40,6 @@ class PushSubscriptionController extends Controller
             ->where('endpoint', $data['endpoint'])
             ->delete();
 
-        return response()->json(['message' => 'Suscripción eliminada.']);
+        return $this->sendResponse(null, 'Suscripción eliminada exitosamente');
     }
 }

@@ -18,7 +18,10 @@ class DirectMessageTest extends TestCase
                 'subject' => 'Consulta',
                 'body' => 'Mensaje de prueba',
             ])
-            ->assertCreated();
+            ->assertCreated()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Mensaje enviado exitosamente')
+            ->assertJsonPath('data.subject', 'Consulta');
 
         $this->assertDatabaseHas('direct_messages', [
             'sender_id' => $admin->id,
@@ -38,7 +41,9 @@ class DirectMessageTest extends TestCase
                 'subject' => 'Consulta',
                 'body' => 'Mensaje de prueba',
             ])
-            ->assertForbidden();
+            ->assertForbidden()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'No puedes enviar mensajes a este destinatario.');
     }
 
     public function test_user_can_list_received_messages(): void
@@ -56,6 +61,8 @@ class DirectMessageTest extends TestCase
         $this->actingAs($recipient)
             ->getJson(route('api.messages.index'))
             ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Mensajes recibidos obtenidos exitosamente')
             ->assertJsonPath('data.0.subject', 'Hola');
     }
 
@@ -71,7 +78,10 @@ class DirectMessageTest extends TestCase
 
         $this->actingAs($recipient)
             ->postJson(route('api.messages.read', $message))
-            ->assertOk();
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Mensaje marcado como leído exitosamente')
+            ->assertJsonPath('data.id', $message->id);
 
         $this->assertNotNull($message->fresh()->read_at);
     }
@@ -90,6 +100,39 @@ class DirectMessageTest extends TestCase
         $this->actingAs($recipient)
             ->getJson(route('api.messages.unread-count'))
             ->assertOk()
-            ->assertJsonPath('count', 3);
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Cantidad de mensajes no leídos obtenida exitosamente')
+            ->assertJsonPath('data.count', 3);
+    }
+
+    public function test_sent_show_and_recipients_use_standard_responses(): void
+    {
+        $admin = $this->createUser('admin');
+        $guardian = $this->createUser('guardian');
+        $message = DirectMessage::factory()->create([
+            'sender_id' => $admin->id,
+            'recipient_id' => $guardian->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('api.messages.sent', ['per_page' => 5]))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Mensajes enviados obtenidos exitosamente')
+            ->assertJsonPath('per_page', 5)
+            ->assertJsonPath('data.0.id', $message->id);
+
+        $this->actingAs($admin)
+            ->getJson(route('api.messages.show', $message))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Mensaje obtenido exitosamente')
+            ->assertJsonPath('data.id', $message->id);
+
+        $this->actingAs($admin)
+            ->getJson(route('api.messages.recipients'))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Destinatarios obtenidos exitosamente');
     }
 }

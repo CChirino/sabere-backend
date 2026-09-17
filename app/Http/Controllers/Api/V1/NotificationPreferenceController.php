@@ -13,7 +13,7 @@ class NotificationPreferenceController extends Controller
     {
         $preferences = UserNotificationPreference::preferencesForUser($request->user());
 
-        return response()->json($preferences);
+        return $this->sendResponse($preferences, 'Preferencias de notificación obtenidas exitosamente');
     }
 
     public function update(Request $request): JsonResponse
@@ -30,6 +30,6 @@ class NotificationPreferenceController extends Controller
         $preferences = UserNotificationPreference::preferencesForUser($request->user());
         $preferences->update($data);
 
-        return response()->json($preferences);
+        return $this->sendResponse($preferences, 'Preferencias de notificación actualizadas exitosamente');
     }
 }
