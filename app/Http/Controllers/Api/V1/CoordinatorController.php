@@ -11,30 +11,33 @@ class CoordinatorController extends Controller
 {
     public function teachers(Request $request): JsonResponse
     {
-        return response()->json(
-            app(CoordinatorDataService::class)->teachers($request)
-        );
+        $teachers = app(CoordinatorDataService::class)->teachers($request);
+
+        return $this->sendPaginatedResponse($teachers, 'Profesores obtenidos exitosamente');
     }
 
     public function teacherShow(int $id): JsonResponse
     {
-        $data = app(CoordinatorDataService::class)->teacherShow($id);
-        $code = $data['success'] ? 200 : 404;
+        $teacher = app(CoordinatorDataService::class)->teacherShow($id);
 
-        return response()->json($data, $code);
+        if (! $teacher) {
+            return $this->sendError('Profesor no encontrado');
+        }
+
+        return $this->sendResponse($teacher, 'Profesor obtenido exitosamente');
     }
 
     public function tasksOverview(Request $request): JsonResponse
     {
-        return response()->json(
-            app(CoordinatorDataService::class)->tasksOverview($request)
-        );
+        $data = app(CoordinatorDataService::class)->tasksOverview($request);
+
+        return $this->sendResponse($data, 'Resumen de tareas obtenido exitosamente');
     }
 
     public function scoresOverview(Request $request): JsonResponse
     {
-        return response()->json(
-            app(CoordinatorDataService::class)->scoresOverview($request)
-        );
+        $data = app(CoordinatorDataService::class)->scoresOverview($request);
+
+        return $this->sendResponse($data, 'Resumen de notas obtenido exitosamente');
     }
 }

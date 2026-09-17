@@ -55,7 +55,7 @@ const fetchTeachers = async (page = 1) => {
         });
         const data = await response.json();
         teachers.value = data.data || [];
-        pagination.value = data.pagination || null;
+        pagination.value = data.success ? data : null;
     } catch (error) {
         console.error('Error fetching teachers:', error);
     } finally {

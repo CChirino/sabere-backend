@@ -8,11 +8,12 @@ use App\Models\Task;
 use App\Models\TaskSubmission;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 
 class CoordinatorDataService
 {
-    public function teachers(Request $request): array
+    public function teachers(Request $request): LengthAwarePaginator
     {
         $query = User::role('teacher')
             ->withCount(['subjectAssignments as assignments_count' => function ($q) {
@@ -42,14 +43,10 @@ class CoordinatorDataService
             return $teacher;
         });
 
-        return [
-            'success' => true,
-            'data' => $teachers->items(),
-            'pagination' => $this->toPagination($teachers),
-        ];
+        return $teachers;
     }
 
-    public function teacherShow(int $id): array
+    public function teacherShow(int $id): ?User
     {
         $teacher = User::where('id', $id)
             ->whereHas('roles', function ($q) {
@@ -61,17 +58,15 @@ class CoordinatorDataService
                         'subject:id,name',
                         'section:id,name,grade_id',
                         'section.grade:id,name',
+                        'section.students:id',
                         'academicPeriod:id,name',
                     ])
-                    ->withCount(['tasks', 'students']);
+                    ->withCount('tasks');
             }])
             ->first();
 
         if (! $teacher) {
-            return [
-                'success' => false,
-                'message' => 'Profesor no encontrado',
-            ];
+            return null;
         }
 
         $totalTasks = 0;
@@ -80,6 +75,7 @@ class CoordinatorDataService
 
         foreach ($teacher->subjectAssignments as $assignment) {
             $totalTasks += $assignment->tasks_count;
+            $assignment->students_count = $assignment->section?->students->count() ?? 0;
             $totalStudents += $assignment->students_count;
 
             $pending = $assignment->tasks()
@@ -101,10 +97,7 @@ class CoordinatorDataService
         $teacher->assignments = $teacher->subjectAssignments;
         unset($teacher->subjectAssignments);
 
-        return [
-            'success' => true,
-            'data' => $teacher,
-        ];
+        return $teacher;
     }
 
     public function tasksOverview(Request $request): array
@@ -164,8 +157,7 @@ class CoordinatorDataService
         ];
 
         return [
-            'success' => true,
-            'data' => $tasks->items(),
+            'items' => $tasks->items(),
             'stats' => $stats,
             'pagination' => $this->toPagination($tasks),
         ];
@@ -240,8 +232,7 @@ class CoordinatorDataService
         ];
 
         return [
-            'success' => true,
-            'data' => $assignments->items(),
+            'items' => $assignments->items(),
             'stats' => $stats,
             'pagination' => $this->toPagination($assignments),
         ];

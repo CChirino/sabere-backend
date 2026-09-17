@@ -76,9 +76,9 @@ const fetchTasks = async (page = 1) => {
             credentials: 'include',
         });
         const data = await response.json();
-        tasks.value = data.data || [];
-        stats.value = data.stats || stats.value;
-        pagination.value = data.pagination || null;
+        tasks.value = data.data?.items || [];
+        stats.value = data.data?.stats || stats.value;
+        pagination.value = data.data?.pagination || null;
     } catch (error) {
         console.error('Error fetching tasks:', error);
     } finally {
